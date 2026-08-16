@@ -13,6 +13,7 @@ export interface SceneContext {
   controls: OrbitControls;
   render(): void;
   resize(): void;
+  resetView(): void;
 }
 
 export function createScene(canvas: HTMLCanvasElement): SceneContext {
@@ -63,5 +64,14 @@ export function createScene(canvas: HTMLCanvasElement): SceneContext {
     renderer.render(scene, camera);
   }
 
-  return { scene, camera, renderer, controls, render, resize };
+  /** Snap the camera back to the front-on drawing pose. The fingertip maps to
+   *  world coordinates, so orbiting desynchronises hand and cursor; this restores
+   *  the orientation the mapping assumes. */
+  function resetView(): void {
+    camera.position.set(0, 0, CAMERA_START_Z);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  }
+
+  return { scene, camera, renderer, controls, render, resize, resetView };
 }

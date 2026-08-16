@@ -7,7 +7,8 @@ import { showFatalError } from "./ui/errorDisplay";
 import { pinchRatio } from "./tracking/gestures";
 import { createScene, SceneError } from "./scene/setup";
 import { HandInputSource } from "./tracking/handInput";
-import { Stroke } from "./scene/stroke";
+import { StrokeManager } from "./scene/strokeManager";
+import { initControls } from "./ui/controls";
 
 async function boot(): Promise<void> {
   let video: HTMLVideoElement;
@@ -57,7 +58,17 @@ async function boot(): Promise<void> {
   let lastFrameMs = performance.now();
   let fps = 0;
   const handInput = new HandInputSource();
-  let activeStroke: Stroke | null = null;
+  const strokes = new StrokeManager(sceneCtx.scene);
+
+  initControls({
+    onClear: () => strokes.clear(),
+    onToggleDebug: () => {
+      const next = !overlay.isVisible();
+      overlay.setVisible(next);
+      return next;
+    },
+    onResetView: () => sceneCtx.resetView(),
+  });
 
   function frame(): void {
     requestAnimationFrame(frame);
@@ -73,13 +84,7 @@ async function boot(): Promise<void> {
     cursor.visible = input.present;
     cursor.position.set(input.tip.x, input.tip.y, input.tip.z);
 
-    if (input.pinching && input.present) {
-      if (!activeStroke) activeStroke = new Stroke(sceneCtx.scene);
-      activeStroke.addPoint(input.tip);
-    } else if (activeStroke) {
-      activeStroke.finalize();
-      activeStroke = null;
-    }
+    strokes.update(input);
 
     overlay.draw(landmarks, {
       fps,
