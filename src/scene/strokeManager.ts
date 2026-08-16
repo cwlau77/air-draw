@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { Stroke } from "./stroke";
 import { ActionHistory } from "./history";
-import type { HandInput } from "../tracking/types";
-import { STROKE_COLOR, TUBE_RADIUS } from "../config";
+import type { HandInput, Vec3 } from "../tracking/types";
+import { ERASE_RADIUS, STROKE_COLOR, TUBE_RADIUS } from "../config";
 
 export class StrokeManager {
   private finished: Stroke[] = [];
@@ -32,6 +32,17 @@ export class StrokeManager {
       return;
     }
 
+    if (input.erasing) {
+      // A fist forces pinching/drawing false upstream, so no stroke can be active here.
+      const hit = this.finished.filter((s) => this.isNear(s, input.tip));
+      if (hit.length > 0) {
+        for (const stroke of hit) stroke.hide();
+        this.finished = this.finished.filter((s) => !hit.includes(s));
+        this.history.push({ type: "erase", strokes: hit });
+      }
+      return;
+    }
+
     if (input.pinching) {
       if (!this.active) this.active = new Stroke(this.scene, this.color, this.radius);
       // Only append while actively drawing: this excludes the finger-opening motion
@@ -40,6 +51,23 @@ export class StrokeManager {
     } else {
       this.endActive();
     }
+  }
+
+  /**
+   * True if any recorded point of the stroke lies within ERASE_RADIUS of `p`.
+   *
+   * No raycasting: every Stroke retains its raw points, so this is a distance check.
+   * The squared distance avoids a sqrt per point.
+   */
+  private isNear(stroke: Stroke, p: Vec3): boolean {
+    const r2 = ERASE_RADIUS * ERASE_RADIUS;
+    for (const q of stroke.points) {
+      const dx = q.x - p.x;
+      const dy = q.y - p.y;
+      const dz = q.z - p.z;
+      if (dx * dx + dy * dy + dz * dz <= r2) return true;
+    }
+    return false;
   }
 
   private endActive(): void {

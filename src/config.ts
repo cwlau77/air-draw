@@ -174,3 +174,11 @@ export const STROKE_RADII = [0.02, 0.04, 0.08] as const;
  * geometry can accumulate over a session.
  */
 export const HISTORY_DEPTH = 20;
+
+/**
+ * A stroke is erased when the fingertip comes within this distance of any of its
+ * recorded points. Scene units — compare against SCENE_HEIGHT (~7.5) for a sense of
+ * scale. Generous enough to catch a stroke without demanding precision, small enough
+ * not to sweep up neighbours.
+ */
+export const ERASE_RADIUS = 0.35;
