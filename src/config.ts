@@ -103,12 +103,18 @@ export const ONE_EURO_D_CUTOFF = 1.0;
  *
  * Z_SCALE was raised from 0.35: at that value the effective depth travel was only
  * about 1 scene unit against scene extents of roughly 7.5 (height) x 9.9 (width),
- * so drawing felt geometrically shallow. Z_MAX is currently unreachable by
- * construction — raw = 1/palmWidth is always positive, so (Z_REF - raw) can never
- * reach +Z_MAX — which the depth instrumentation (measureDepth, PinchDiagnostics)
- * is intended to resolve by measuring real raw values and resettling Z_REF.
+ * so drawing felt geometrically shallow.
+ *
+ * Z_REF = 5.2 is the measured median of depthRaw (1/palmWidth) at the user's natural
+ * drawing distance (airDrawDiag, 8392 samples: depthRaw p50 5.2158), replacing the
+ * original guess of 7.0. Centering on the measured median puts z near zero at rest
+ * and makes depth travel symmetric: push toward the camera for positive z, pull back
+ * for negative. With this value the expected range is roughly -1.9 to +1.4 (from
+ * measured depthRaw p5 3.41 and p95 7.59), which no longer clips against Z_MIN/Z_MAX
+ * the way the old Z_REF=7.0 did (measured z was hitting both the -3 and +3 clamps,
+ * with p95 2.8753 and a max of exactly 3.0000).
  */
-export const Z_REF = 7.0;
+export const Z_REF = 5.2;
 export const Z_SCALE = 0.8;
 export const Z_MIN = -3;
 export const Z_MAX = 3;
