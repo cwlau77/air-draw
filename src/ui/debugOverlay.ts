@@ -3,6 +3,8 @@ export interface DebugInfo {
   pinchRatio: number | null;
   pinching: boolean;
   drawing: boolean;
+  rollingRange: { min: number; max: number } | null;
+  flickerCount: number;
 }
 
 export class DebugOverlay {
@@ -61,7 +63,12 @@ export class DebugOverlay {
     ctx.fillText(`pinch ratio ${ratio}`, 12, 44);
     ctx.fillText(`pinching ${info.pinching}`, 12, 64);
     ctx.fillText(`drawing ${info.drawing}`, 12, 104);
-    ctx.fillText(landmarks ? "hand: present" : "hand: none", 12, 124);
+    const range = info.rollingRange
+      ? `${info.rollingRange.min.toFixed(4)}-${info.rollingRange.max.toFixed(4)}`
+      : "--";
+    ctx.fillText(`range ${range}`, 12, 124);
+    ctx.fillText(`flickers ${info.flickerCount}`, 12, 144);
+    ctx.fillText(landmarks ? "hand: present" : "hand: none", 12, 164);
     ctx.restore();
   }
 }

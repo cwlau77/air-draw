@@ -15,6 +15,9 @@ export interface HandTracker {
   /** Returns 21 landmarks, or null if detection ran and found no hand, or if the video
    *  has been stalled too long (see STALE_FRAME_TIMEOUT_MS) to keep trusting the cache. */
   detect(video: HTMLVideoElement, nowMs: number): Landmark[] | null;
+  /** Handedness of the most recent detection, or null if no hand. Diagnostics only —
+   *  deliberately NOT part of HandInput. */
+  readonly handedness: string | null;
 }
 
 export async function createHandTracker(): Promise<HandTracker> {
@@ -35,6 +38,7 @@ export async function createHandTracker(): Promise<HandTracker> {
   // so skip frames the video has not advanced past.
   let lastVideoTime = -1;
   let lastResult: Landmark[] | null = null;
+  let lastHandedness: string | null = null;
   let lastAdvanceMs = -1;
 
   return {
@@ -53,6 +57,7 @@ export async function createHandTracker(): Promise<HandTracker> {
           return lastResult;
         }
         lastResult = null;
+        lastHandedness = null;
         return lastResult;
       }
       lastVideoTime = video.currentTime;
@@ -61,7 +66,11 @@ export async function createHandTracker(): Promise<HandTracker> {
       const result = landmarker.detectForVideo(video, nowMs);
       const hand = result.landmarks[0];
       lastResult = hand && hand.length > 0 ? hand : null;
+      lastHandedness = lastResult ? (result.handedness[0]?.[0]?.categoryName ?? null) : null;
       return lastResult;
+    },
+    get handedness() {
+      return lastHandedness;
     },
   };
 }

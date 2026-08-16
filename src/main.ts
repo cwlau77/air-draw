@@ -9,6 +9,7 @@ import { createScene, SceneError } from "./scene/setup";
 import { HandInputSource } from "./tracking/handInput";
 import { StrokeManager } from "./scene/strokeManager";
 import { initControls } from "./ui/controls";
+import { PinchDiagnostics } from "./ui/diagnostics";
 
 async function boot(): Promise<void> {
   let video: HTMLVideoElement;
@@ -60,6 +61,13 @@ async function boot(): Promise<void> {
   const handInput = new HandInputSource();
   const strokes = new StrokeManager(sceneCtx.scene);
 
+  const diagnostics = new PinchDiagnostics();
+  // Debug handle for console use: airDrawDiag.sample("right-pinched"), .stats(), .reset()
+  (window as any).airDrawDiag = diagnostics;
+  console.log(
+    '[air-draw] diagnostics: airDrawDiag.sample("right-pinched"), .stats(), .reset()',
+  );
+
   initControls({
     onClear: () => strokes.clear(),
     onToggleDebug: () => {
@@ -86,11 +94,23 @@ async function boot(): Promise<void> {
 
     strokes.update(input);
 
+    if (landmarks) {
+      diagnostics.record({
+        t: now,
+        ratio: pinchRatio(landmarks),
+        pinching: input.pinching,
+        drawing: input.drawing,
+        hand: tracker.handedness ?? "unknown",
+      });
+    }
+
     overlay.draw(landmarks, {
       fps,
       pinchRatio: landmarks ? pinchRatio(landmarks) : null,
       pinching: input.pinching,
       drawing: input.drawing,
+      rollingRange: diagnostics.rolling(),
+      flickerCount: diagnostics.flickerCount,
     });
     sceneCtx.render();
   }
