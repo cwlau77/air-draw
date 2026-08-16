@@ -1,13 +1,16 @@
 import "./style.css";
+import * as THREE from "three";
 import { startCamera, CameraError } from "./camera";
 import { createHandTracker, TrackerError } from "./tracking/handTracker";
 import { DebugOverlay } from "./ui/debugOverlay";
 import { showFatalError } from "./ui/errorDisplay";
 import { PinchDetector, pinchRatio } from "./tracking/gestures";
+import { createScene, SceneError } from "./scene/setup";
 
 async function boot(): Promise<void> {
   let video: HTMLVideoElement;
   let tracker: Awaited<ReturnType<typeof createHandTracker>>;
+  let sceneCtx: ReturnType<typeof createScene>;
 
   try {
     video = await startCamera();
@@ -27,17 +30,28 @@ async function boot(): Promise<void> {
     }
 
     tracker = await createHandTracker();
+    sceneCtx = createScene(document.querySelector<HTMLCanvasElement>("#scene")!);
   } catch (err) {
-    if (err instanceof CameraError || err instanceof TrackerError) {
+    if (err instanceof CameraError || err instanceof TrackerError || err instanceof SceneError) {
       showFatalError(err.message);
       return;
     }
     throw err;
   }
 
+  // TEMPORARY reference object — deleted in Task 6 once strokes render.
+  const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshStandardMaterial({ color: 0x44aaff }),
+  );
+  sceneCtx.scene.add(cube);
+
   const overlayCanvas = document.querySelector<HTMLCanvasElement>("#overlay")!;
   const overlay = new DebugOverlay(overlayCanvas);
-  window.addEventListener("resize", () => overlay.resize());
+  window.addEventListener("resize", () => {
+    overlay.resize();
+    sceneCtx.resize();
+  });
 
   let lastFrameMs = performance.now();
   let fps = 0;
@@ -58,6 +72,7 @@ async function boot(): Promise<void> {
       pinchRatio: landmarks ? pinchRatio(landmarks) : null,
       pinching,
     });
+    sceneCtx.render();
   }
 
   requestAnimationFrame(frame);

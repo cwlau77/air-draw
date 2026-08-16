@@ -23,3 +23,10 @@ export const LM_PINKY_MCP = 17;
 export const PINCH_ON = 0.26;
 /** Pinch releases above this ratio. Deliberately higher than PINCH_ON (hysteresis). */
 export const PINCH_OFF = 0.33;
+
+/** Scene extents the hand maps into. Roughly 4:3 to match the video. */
+export const SCENE_WIDTH = 8;
+export const SCENE_HEIGHT = 6;
+
+export const CAMERA_FOV = 50;
+export const CAMERA_START_Z = 8;
