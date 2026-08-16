@@ -8,10 +8,14 @@ import {
   PINCH_OFF,
   PINCH_RELEASE_DELAY_MS,
   PINCH_RELEASE_HARD,
+  LANDMARK_ASPECT,
 } from "../config";
 
+/** Euclidean distance in isotropic units. See LANDMARK_ASPECT: x and y are normalised
+ *  by different frame dimensions, so the x-delta must be scaled or the result depends
+ *  on the vector's orientation. */
 function distance(a: Landmark, b: Landmark): number {
-  return Math.hypot(a.x - b.x, a.y - b.y);
+  return Math.hypot((a.x - b.x) * LANDMARK_ASPECT, a.y - b.y);
 }
 
 /**

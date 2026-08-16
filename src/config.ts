@@ -2,6 +2,15 @@
 export const VIDEO_WIDTH = 640;
 export const VIDEO_HEIGHT = 480;
 
+/**
+ * MediaPipe normalises x by frame WIDTH and y by frame HEIGHT, so on a non-square
+ * frame one x-unit is physically longer than one y-unit. Scale x-deltas by this
+ * before any distance calculation, or every measured distance depends on the
+ * ORIENTATION of the vector — which made the pinch ratio swing with wrist rotation
+ * and behave differently for left and right hands.
+ */
+export const LANDMARK_ASPECT = VIDEO_WIDTH / VIDEO_HEIGHT;
+
 /** MediaPipe asset paths (served from public/). */
 export const WASM_PATH = "/wasm";
 export const MODEL_PATH = "/models/hand_landmarker.task";

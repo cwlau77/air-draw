@@ -1,5 +1,13 @@
 import type { Landmark } from "./handTracker";
-import { LM_INDEX_MCP, LM_PINKY_MCP, Z_REF, Z_SCALE, Z_MIN, Z_MAX } from "../config";
+import {
+  LM_INDEX_MCP,
+  LM_PINKY_MCP,
+  Z_REF,
+  Z_SCALE,
+  Z_MIN,
+  Z_MAX,
+  LANDMARK_ASPECT,
+} from "../config";
 
 /**
  * MediaPipe's per-landmark z is relative to the wrist and far too noisy for stroke
@@ -14,7 +22,9 @@ import { LM_INDEX_MCP, LM_PINKY_MCP, Z_REF, Z_SCALE, Z_MIN, Z_MAX } from "../con
 export function estimateDepth(landmarks: Landmark[]): number {
   const a = landmarks[LM_INDEX_MCP];
   const b = landmarks[LM_PINKY_MCP];
-  const palmWidth = Math.hypot(a.x - b.x, a.y - b.y);
+  // See LANDMARK_ASPECT (config.ts): x is normalised by frame width, y by frame
+  // height, so the x-delta must be rescaled or palm rotation injects phantom depth.
+  const palmWidth = Math.hypot((a.x - b.x) * LANDMARK_ASPECT, a.y - b.y);
   if (palmWidth < 1e-6) return 0;
 
   const raw = 1 / palmWidth;
