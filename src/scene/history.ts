@@ -18,6 +18,11 @@ export type Action =
 export class ActionHistory {
   private actions: Action[] = [];
 
+  /**
+   * Precondition for erase actions: the strokes must ALREADY have been removed from
+   * StrokeManager.finished. If they are still live there, eviction-time disposal here
+   * would free geometry the user is still looking at.
+   */
   push(action: Action): void {
     this.actions.push(action);
     while (this.actions.length > HISTORY_DEPTH) {
@@ -36,11 +41,20 @@ export class ActionHistory {
   }
 
   /**
-   * Drops all history without disposing anything. The caller is responsible for the
-   * strokes — StrokeManager.clear() disposes everything itself, so a double-dispose here
-   * would be wrong even though Stroke.dispose() is idempotent.
+   * Drops all history, disposing the strokes the history OWNS.
+   *
+   * Only erase actions own their strokes: an erased stroke was removed from
+   * StrokeManager.finished, so the history action is its last reference and nothing
+   * else will ever free it. A draw action's stroke is still live in `finished` and is
+   * disposed by StrokeManager.clear() itself — disposing it here too would be
+   * redundant (Stroke.dispose() is idempotent) and would misrepresent ownership.
    */
   clear(): void {
+    for (const action of this.actions) {
+      if (action.type === "erase") {
+        for (const stroke of action.strokes) stroke.dispose();
+      }
+    }
     this.actions = [];
   }
 }
