@@ -58,7 +58,8 @@ export class Stroke {
 
     this.liveGeometry.setDrawRange(0, this.points.length);
     this.liveGeometry.attributes.position.needsUpdate = true;
-    this.liveGeometry.computeBoundingSphere();
+    // No computeBoundingSphere() here: it is O(n) per call, which would make a long
+    // stroke O(n^2), and liveLine.frustumCulled = false means it is never consulted.
   }
 
   /** Builds the final geometry exactly once, then discards the live line. */
