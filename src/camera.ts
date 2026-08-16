@@ -18,7 +18,12 @@ export async function startCamera(): Promise<HTMLVideoElement> {
     if (name === "NotFoundError" || name === "DevicesNotFoundError") {
       throw new CameraError(ERROR_MESSAGES.noCamera);
     }
-    throw new CameraError(ERROR_MESSAGES.permissionDenied);
+    if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+      throw new CameraError(ERROR_MESSAGES.permissionDenied);
+    }
+    // Most commonly NotReadableError on macOS: another app already holds the camera.
+    // Sending this user to the permission dialog would be wrong — permission is fine.
+    throw new CameraError(ERROR_MESSAGES.cameraUnavailable);
   }
 
   video.srcObject = stream;

@@ -13,20 +13,22 @@ export class Stroke {
   /** Raw points are retained deliberately — future export/recognition needs them. */
   readonly points: Vec3[] = [];
 
-  private liveGeometry: THREE.BufferGeometry;
-  private liveMaterial: THREE.LineBasicMaterial;
-  private liveLine: THREE.Line;
-  private positions: Float32Array;
+  private liveGeometry: THREE.BufferGeometry | null;
+  private liveMaterial: THREE.LineBasicMaterial | null;
+  private liveLine: THREE.Line | null;
+  private positions: Float32Array | null;
+  // Typed distinctly from liveGeometry.attributes.position (a BufferAttribute |
+  // InterleavedBufferAttribute union) so addUpdateRange, which only exists on
+  // BufferAttribute, is available without a cast.
+  private positionAttr: THREE.BufferAttribute | null;
   private finalMesh: THREE.Mesh | null = null;
   private finalized = false;
 
   constructor(private scene: THREE.Scene) {
     this.positions = new Float32Array(MAX_STROKE_POINTS * 3);
+    this.positionAttr = new THREE.BufferAttribute(this.positions, 3);
     this.liveGeometry = new THREE.BufferGeometry();
-    this.liveGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(this.positions, 3),
-    );
+    this.liveGeometry.setAttribute("position", this.positionAttr);
     this.liveGeometry.setDrawRange(0, 0);
     // THREE.Line ignores linewidth > 1 on essentially every platform. That is fine —
     // thickness comes from the TubeGeometry built in finalize().
@@ -43,6 +45,9 @@ export class Stroke {
   /** Appends only if far enough from the previous point. Dense points are jittery and expensive. */
   addPoint(p: Vec3): void {
     if (this.finalized || this.points.length >= MAX_STROKE_POINTS) return;
+    // The `finalized` check above already prevents reaching here after finalize()
+    // nulls these fields; this guard exists only to satisfy their nullable types.
+    if (!this.positions || !this.liveGeometry || !this.positionAttr) return;
 
     const prev = this.points[this.points.length - 1];
     if (prev) {
@@ -57,7 +62,10 @@ export class Stroke {
     this.points.push({ ...p });
 
     this.liveGeometry.setDrawRange(0, this.points.length);
-    this.liveGeometry.attributes.position.needsUpdate = true;
+    this.positionAttr.needsUpdate = true;
+    // Restrict the GPU upload to the 3 components just written, instead of re-uploading
+    // the whole preallocated buffer on every appended point.
+    this.positionAttr.addUpdateRange(i, 3);
     // No computeBoundingSphere() here: it is O(n) per call, which would make a long
     // stroke O(n^2), and liveLine.frustumCulled = false means it is never consulted.
   }
@@ -67,9 +75,17 @@ export class Stroke {
     if (this.finalized) return;
     this.finalized = true;
 
-    this.scene.remove(this.liveLine);
-    this.liveGeometry.dispose();
-    this.liveMaterial.dispose();
+    this.scene.remove(this.liveLine!);
+    this.liveGeometry!.dispose();
+    this.liveMaterial!.dispose();
+    // Drop the JS references too, not just the GPU buffer: the preallocated 5000-point
+    // Float32Array (~60KB) plus the geometry/line/material chain would otherwise be
+    // retained for the lifetime of every finished stroke (PLAN.md §6).
+    this.liveGeometry = null;
+    this.liveMaterial = null;
+    this.liveLine = null;
+    this.positions = null;
+    this.positionAttr = null;
 
     // A single point is a deliberate tap: render it as a dot rather than silently
     // discarding the user's input. Fewer than one point means nothing was drawn.
@@ -111,9 +127,11 @@ export class Stroke {
   /** Frees GPU memory. Scene removal alone leaks (PLAN.md §6). */
   dispose(): void {
     if (!this.finalized) {
-      this.scene.remove(this.liveLine);
-      this.liveGeometry.dispose();
-      this.liveMaterial.dispose();
+      // finalize() is the only place that sets finalized to true, and it is also the
+      // only place these fields are nulled — so while !this.finalized, they are live.
+      this.scene.remove(this.liveLine!);
+      this.liveGeometry!.dispose();
+      this.liveMaterial!.dispose();
       this.finalized = true;
     }
     if (this.finalMesh) {

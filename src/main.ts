@@ -90,6 +90,7 @@ async function boot(): Promise<void> {
       fps,
       pinchRatio: landmarks ? pinchRatio(landmarks) : null,
       pinching: input.pinching,
+      drawing: input.drawing,
     });
     sceneCtx.render();
   }

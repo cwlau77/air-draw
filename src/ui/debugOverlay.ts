@@ -2,6 +2,7 @@ export interface DebugInfo {
   fps: number;
   pinchRatio: number | null;
   pinching: boolean;
+  drawing: boolean;
 }
 
 export class DebugOverlay {
@@ -23,6 +24,11 @@ export class DebugOverlay {
   setVisible(v: boolean): void {
     this.visible = v;
     this.canvas.hidden = !v;
+    // Hiding the canvas zeroes clientWidth/clientHeight, which resize() reads to set
+    // the backing store. Without this, toggling off then resizing the window leaves
+    // the backing store at 0x0, and it is never restored until the next resize while
+    // visible — so the overlay would stay blank forever after toggling back on.
+    if (v) this.resize();
   }
 
   isVisible(): boolean {
@@ -54,7 +60,8 @@ export class DebugOverlay {
     ctx.fillText(`fps ${info.fps.toFixed(0)}`, 12, 24);
     ctx.fillText(`pinch ratio ${ratio}`, 12, 44);
     ctx.fillText(`pinching ${info.pinching}`, 12, 64);
-    ctx.fillText(landmarks ? "hand: present" : "hand: none", 12, 84);
+    ctx.fillText(`drawing ${info.drawing}`, 12, 104);
+    ctx.fillText(landmarks ? "hand: present" : "hand: none", 12, 124);
     ctx.restore();
   }
 }

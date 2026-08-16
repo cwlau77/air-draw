@@ -47,8 +47,11 @@ export function createScene(canvas: HTMLCanvasElement): SceneContext {
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
   controls.enableZoom = true;
-  // Deliberate (spec §3): no ground plane and no reset control, so panning
-  // strands the user looking at empty space. Do not re-enable.
+  // Deliberate (spec §3): there is no ground plane or other spatial reference, so
+  // panning can strand the user looking at empty space with no landmark to reorient
+  // by. resetView() below recovers the camera pose, but not the user's sense of where
+  // the drawing is — so the pan ban stays regardless of the reset control. Do not
+  // re-enable.
   controls.enablePan = false;
 
   function resize(): void {

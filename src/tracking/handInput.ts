@@ -42,13 +42,19 @@ export class HandInputSource {
     const rawY = -(tipY - 0.5) * SCENE_HEIGHT;
     const rawZ = estimateDepth(landmarks);
 
+    // update() must run before isDrawing is read below: isDrawing reflects the state
+    // update() just computed, and object-literal fields evaluate top to bottom, so
+    // hoisting this call keeps that dependency explicit instead of relying on literal
+    // property order (which a future "cosmetic" reordering could silently break).
+    const pinching = this.pinch.update(landmarks, nowMs);
+
     this.last = {
       tip: {
         x: this.fx.filter(rawX, nowMs),
         y: this.fy.filter(rawY, nowMs),
         z: this.fz.filter(rawZ, nowMs),
       },
-      pinching: this.pinch.update(landmarks, nowMs),
+      pinching,
       drawing: this.pinch.isDrawing,
       present: true,
     };

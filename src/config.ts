@@ -35,6 +35,12 @@ export const PINCH_RELEASE_DELAY_MS = 60;
  *  a ratio this high is a deliberate release, not a blur artefact. */
 export const PINCH_RELEASE_HARD = 0.45;
 
+/** If the video has not advanced for this long, treat the hand as lost rather than
+ *  returning stale landmarks forever. Guards against the webcam being unplugged or
+ *  taken by another app, which would otherwise freeze the cursor and never end the
+ *  active stroke. */
+export const STALE_FRAME_TIMEOUT_MS = 400;
+
 export const CAMERA_FOV = 50;
 export const CAMERA_START_Z = 8;
 
