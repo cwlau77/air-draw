@@ -3,10 +3,8 @@ import type { Vec3 } from "../tracking/types";
 import {
   MAX_STROKE_POINTS,
   MIN_POINT_DISTANCE,
-  TUBE_RADIUS,
   TUBE_SEGMENTS_PER_POINT,
   TUBE_RADIAL_SEGMENTS,
-  STROKE_COLOR,
 } from "../config";
 
 export class Stroke {
@@ -24,7 +22,11 @@ export class Stroke {
   private finalMesh: THREE.Mesh | null = null;
   private finalized = false;
 
-  constructor(private scene: THREE.Scene) {
+  constructor(
+    private scene: THREE.Scene,
+    private color: number,
+    private radius: number,
+  ) {
     this.positions = new Float32Array(MAX_STROKE_POINTS * 3);
     this.positionAttr = new THREE.BufferAttribute(this.positions, 3);
     this.liveGeometry = new THREE.BufferGeometry();
@@ -32,7 +34,7 @@ export class Stroke {
     this.liveGeometry.setDrawRange(0, 0);
     // THREE.Line ignores linewidth > 1 on essentially every platform. That is fine —
     // thickness comes from the TubeGeometry built in finalize().
-    this.liveMaterial = new THREE.LineBasicMaterial({ color: STROKE_COLOR });
+    this.liveMaterial = new THREE.LineBasicMaterial({ color: this.color });
     this.liveLine = new THREE.Line(this.liveGeometry, this.liveMaterial);
     this.liveLine.frustumCulled = false;
     this.scene.add(this.liveLine);
@@ -92,9 +94,9 @@ export class Stroke {
     if (this.points.length === 0) return;
     if (this.points.length === 1) {
       const p = this.points[0];
-      const dotGeometry = new THREE.SphereGeometry(TUBE_RADIUS, TUBE_RADIAL_SEGMENTS, TUBE_RADIAL_SEGMENTS);
+      const dotGeometry = new THREE.SphereGeometry(this.radius, TUBE_RADIAL_SEGMENTS, TUBE_RADIAL_SEGMENTS);
       const dotMaterial = new THREE.MeshStandardMaterial({
-        color: STROKE_COLOR,
+        color: this.color,
         roughness: 0.4,
         metalness: 0.1,
       });
@@ -111,12 +113,12 @@ export class Stroke {
     const geometry = new THREE.TubeGeometry(
       curve,
       segments,
-      TUBE_RADIUS,
+      this.radius,
       TUBE_RADIAL_SEGMENTS,
       false,
     );
     const material = new THREE.MeshStandardMaterial({
-      color: STROKE_COLOR,
+      color: this.color,
       roughness: 0.4,
       metalness: 0.1,
     });

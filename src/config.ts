@@ -139,3 +139,16 @@ export const TUBE_RADIUS = 0.04;
 export const TUBE_SEGMENTS_PER_POINT = 4;
 export const TUBE_RADIAL_SEGMENTS = 8;
 export const STROKE_COLOR = 0xffcc33;
+
+/** Selectable stroke colours. Six is enough to distinguish strokes without a picker. */
+export const STROKE_PALETTE = [
+  0xffcc33, // amber (default, matches the original STROKE_COLOR)
+  0xff5566, // red
+  0x44ddaa, // green
+  0x4499ff, // blue
+  0xcc66ff, // violet
+  0xffffff, // white
+] as const;
+
+/** Selectable brush radii, small to large. TUBE_RADIUS (0.04) is the default middle value. */
+export const STROKE_RADII = [0.02, 0.04, 0.08] as const;

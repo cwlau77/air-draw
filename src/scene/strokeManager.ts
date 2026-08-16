@@ -1,12 +1,25 @@
 import * as THREE from "three";
 import { Stroke } from "./stroke";
 import type { HandInput } from "../tracking/types";
+import { STROKE_COLOR, TUBE_RADIUS } from "../config";
 
 export class StrokeManager {
   private finished: Stroke[] = [];
   private active: Stroke | null = null;
+  private color: number = STROKE_COLOR;
+  private radius: number = TUBE_RADIUS;
 
   constructor(private scene: THREE.Scene) {}
+
+  /** Applies to the NEXT stroke only; strokes already drawn are never recoloured. */
+  setColor(color: number): void {
+    this.color = color;
+  }
+
+  /** Applies to the NEXT stroke only. */
+  setRadius(radius: number): void {
+    this.radius = radius;
+  }
 
   /** Consumes only the HandInput contract — knows nothing about MediaPipe. */
   update(input: HandInput): void {
@@ -18,7 +31,7 @@ export class StrokeManager {
     }
 
     if (input.pinching) {
-      if (!this.active) this.active = new Stroke(this.scene);
+      if (!this.active) this.active = new Stroke(this.scene, this.color, this.radius);
       // Only append while actively drawing: this excludes the finger-opening motion
       // during the release debounce, which otherwise trails the stroke.
       if (input.drawing) this.active.addPoint(input.tip);
