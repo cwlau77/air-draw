@@ -3,7 +3,7 @@ import type { HandInput } from "./types";
 import { PinchDetector } from "./gestures";
 import { OneEuroFilter } from "./smoothing";
 import { estimateDepth } from "./depth";
-import { LM_INDEX_TIP, SCENE_WIDTH, SCENE_HEIGHT } from "../config";
+import { LM_THUMB_TIP, LM_INDEX_TIP, SCENE_WIDTH, SCENE_HEIGHT } from "../config";
 
 export class HandInputSource {
   private pinch = new PinchDetector();
@@ -26,13 +26,19 @@ export class HandInputSource {
       return this.last;
     }
 
-    const tipLm = landmarks[LM_INDEX_TIP];
+    // Draw from the midpoint of thumb tip and index tip, not the index tip alone:
+    // pinching converges both fingers ON this point, so it barely moves during the
+    // gesture. Using the index tip made every stroke start with an inward drag hook.
+    const thumbLm = landmarks[LM_THUMB_TIP];
+    const indexLm = landmarks[LM_INDEX_TIP];
+    const tipX = (thumbLm.x + indexLm.x) / 2;
+    const tipY = (thumbLm.y + indexLm.y) / 2;
 
     // Mirroring convention: the video and overlay are mirrored via CSS, so the scene
     // mapping compensates here with (0.5 - x). MediaPipe is origin-top-left in [0,1];
     // three.js is y-up, origin-center.
-    const rawX = (0.5 - tipLm.x) * SCENE_WIDTH;
-    const rawY = -(tipLm.y - 0.5) * SCENE_HEIGHT;
+    const rawX = (0.5 - tipX) * SCENE_WIDTH;
+    const rawY = -(tipY - 0.5) * SCENE_HEIGHT;
     const rawZ = estimateDepth(landmarks);
 
     this.last = {

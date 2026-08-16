@@ -7,6 +7,7 @@ import {
   PINCH_ON,
   PINCH_OFF,
   PINCH_RELEASE_DELAY_MS,
+  PINCH_RELEASE_HARD,
 } from "../config";
 
 function distance(a: Landmark, b: Landmark): number {
@@ -52,7 +53,11 @@ export class PinchDetector {
       return this.pinching;
     }
 
-    if (ratio > PINCH_OFF) {
+    if (ratio > PINCH_RELEASE_HARD) {
+      // Unambiguously open — a deliberate release, not a blur spike. Stop at once.
+      this.pinching = false;
+      this.releaseSince = null;
+    } else if (ratio > PINCH_OFF) {
       // Motion blur can spike the ratio for a frame or two; only release if it stays high.
       if (this.releaseSince === null) this.releaseSince = nowMs;
       else if (nowMs - this.releaseSince >= PINCH_RELEASE_DELAY_MS) {

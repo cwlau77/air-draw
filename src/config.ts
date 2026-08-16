@@ -30,6 +30,11 @@ export const PINCH_OFF = 0.30;
  *  stale frames, so a frame counter would count duplicate samples. */
 export const PINCH_RELEASE_DELAY_MS = 60;
 
+/** Above this ratio the hand is unambiguously open, so release immediately with no
+ *  debounce. The debounce exists to survive 1-2 motion-blurred frames near PINCH_OFF;
+ *  a ratio this high is a deliberate release, not a blur artefact. */
+export const PINCH_RELEASE_HARD = 0.45;
+
 export const CAMERA_FOV = 50;
 export const CAMERA_START_Z = 8;
 
