@@ -6,6 +6,10 @@ import { LM_INDEX_MCP, LM_PINKY_MCP, Z_REF, Z_SCALE, Z_MIN, Z_MAX } from "../con
  * depth. Apparent palm width is stable instead: a closer hand fills more of the frame.
  * Known limitation (spec §5, PLAN.md §6): this drifts if the user leans toward the
  * camera. That is accepted, not a bug to chase.
+ *
+ * raw = 1/palmWidth grows as the hand moves AWAY from the camera. The scene camera
+ * looks from +z toward the origin, so +z is toward the viewer: a hand moving away
+ * must produce a MORE NEGATIVE z. Hence (Z_REF - raw), not (raw - Z_REF).
  */
 export function estimateDepth(landmarks: Landmark[]): number {
   const a = landmarks[LM_INDEX_MCP];
@@ -14,6 +18,6 @@ export function estimateDepth(landmarks: Landmark[]): number {
   if (palmWidth < 1e-6) return 0;
 
   const raw = 1 / palmWidth;
-  const z = (raw - Z_REF) * Z_SCALE;
+  const z = (Z_REF - raw) * Z_SCALE;
   return Math.min(Z_MAX, Math.max(Z_MIN, z));
 }
