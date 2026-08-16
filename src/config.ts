@@ -28,13 +28,16 @@ export const LM_WRIST = 0;
 export const LM_INDEX_MCP = 5;
 export const LM_PINKY_MCP = 17;
 
-/** Engage below this ratio. Measured pinched ratios reach at most 0.171 across both
- *  hands; open hands never read below 0.92. Sits about 2x above the worst pinched value. */
-export const PINCH_ON = 0.35;
-/** Release past this ratio (subject to debounce below). Roughly the geometric midpoint
- *  of the measured pinched/open gap, so low-end glitch spikes (observed up to 0.28) no
- *  longer cross it at all. */
-export const PINCH_OFF = 0.5;
+/** Engage below this ratio. Measured pinched medians are ~0.126 (left) and ~0.146
+ *  (right), so this sits about 1.7x above a typical pinched value. Assumes
+ *  PINCH_MEDIAN_WINDOW is filtering the ratio first — if that window is ever reduced
+ *  to 1, this must be widened again. */
+export const PINCH_ON = 0.25;
+/** Release past this ratio (subject to debounce below). A modest finger separation
+ *  rather than a wide opening — safe only because the median filter removes the
+ *  impulsive excursions that previously reached 0.73. If PINCH_MEDIAN_WINDOW is ever
+ *  reduced to 1, this must be widened again. */
+export const PINCH_OFF = 0.33;
 
 /** Ratio must stay above PINCH_OFF this long before the pinch releases. A measured
  *  tracking glitch spiked the ratio for ~133ms; this bridges it with margin. Costs
@@ -45,10 +48,11 @@ export const PINCH_OFF = 0.5;
 export const PINCH_RELEASE_DELAY_MS = 150;
 
 /** Above this ratio the hand is unambiguously open, so release immediately with no
- *  debounce. Above the worst observed glitch spike (0.7047) but below the lowest
- *  measured open reading (0.9227), so a deliberate open hand still stops drawing at
- *  once while a glitch does not. */
-export const PINCH_RELEASE_HARD = 0.8;
+ *  debounce. Above the measured open-hand floor (0.3713), but that low tail belongs
+ *  to transitions, not steady open hands (open medians are 0.64-0.66); the debounce
+ *  is the guard for that transitional region. Assumes PINCH_MEDIAN_WINDOW is filtering
+ *  the ratio first — if that window is ever reduced to 1, this must be widened again. */
+export const PINCH_RELEASE_HARD = 0.5;
 
 /**
  * Number of recent pinch-ratio samples used for the median that thresholding sees.
