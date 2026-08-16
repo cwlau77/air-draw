@@ -71,8 +71,22 @@ export class Stroke {
     this.liveGeometry.dispose();
     this.liveMaterial.dispose();
 
-    // Fewer than 2 points is a tap, not a stroke — nothing to build.
-    if (this.points.length < 2) return;
+    // A single point is a deliberate tap: render it as a dot rather than silently
+    // discarding the user's input. Fewer than one point means nothing was drawn.
+    if (this.points.length === 0) return;
+    if (this.points.length === 1) {
+      const p = this.points[0];
+      const dotGeometry = new THREE.SphereGeometry(TUBE_RADIUS, TUBE_RADIAL_SEGMENTS, TUBE_RADIAL_SEGMENTS);
+      const dotMaterial = new THREE.MeshStandardMaterial({
+        color: STROKE_COLOR,
+        roughness: 0.4,
+        metalness: 0.1,
+      });
+      this.finalMesh = new THREE.Mesh(dotGeometry, dotMaterial);
+      this.finalMesh.position.set(p.x, p.y, p.z);
+      this.scene.add(this.finalMesh);
+      return;
+    }
 
     const curve = new THREE.CatmullRomCurve3(
       this.points.map((p) => new THREE.Vector3(p.x, p.y, p.z)),

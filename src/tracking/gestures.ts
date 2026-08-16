@@ -35,6 +35,15 @@ export class PinchDetector {
     return this.pinching;
   }
 
+  /**
+   * True only while points should actively be appended. Goes false the moment the
+   * ratio rises above PINCH_OFF, before the debounce decides whether to end the
+   * stroke — so the finger-opening motion is not recorded as a tail.
+   */
+  get isDrawing(): boolean {
+    return this.pinching && this.releaseSince === null;
+  }
+
   /** Returns the new pinch state. A null hand always releases immediately. */
   update(landmarks: Landmark[] | null, nowMs: number): boolean {
     if (!landmarks) {

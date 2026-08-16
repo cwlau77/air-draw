@@ -13,6 +13,7 @@ export class HandInputSource {
   private last: HandInput = {
     tip: { x: 0, y: 0, z: 0 },
     pinching: false,
+    drawing: false,
     present: false,
   };
 
@@ -22,7 +23,7 @@ export class HandInputSource {
       this.fx.reset();
       this.fy.reset();
       this.fz.reset();
-      this.last = { tip: this.last.tip, pinching: this.pinch.update(null, nowMs), present: false };
+      this.last = { tip: this.last.tip, pinching: this.pinch.update(null, nowMs), drawing: false, present: false };
       return this.last;
     }
 
@@ -48,6 +49,7 @@ export class HandInputSource {
         z: this.fz.filter(rawZ, nowMs),
       },
       pinching: this.pinch.update(landmarks, nowMs),
+      drawing: this.pinch.isDrawing,
       present: true,
     };
     return this.last;

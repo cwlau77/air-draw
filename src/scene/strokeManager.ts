@@ -23,7 +23,9 @@ export class StrokeManager {
 
     if (input.pinching) {
       if (!this.active) this.active = new Stroke(this.scene);
-      this.active.addPoint(input.tip);
+      // Only append while actively drawing: this excludes the finger-opening motion
+      // during the release debounce, which otherwise trails the stroke.
+      if (input.drawing) this.active.addPoint(input.tip);
     } else {
       this.endActive();
     }
@@ -32,8 +34,8 @@ export class StrokeManager {
   private endActive(): void {
     if (!this.active) return;
     this.active.finalize();
-    // A stroke of 0 or 1 points built no geometry; drop it rather than retain it.
-    if (this.active.pointCount >= 2) this.finished.push(this.active);
+    // A stroke of 0 points built no geometry; drop it rather than retain it.
+    if (this.active.pointCount >= 1) this.finished.push(this.active);
     else this.active.dispose();
     this.active = null;
   }
