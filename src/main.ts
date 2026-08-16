@@ -11,6 +11,7 @@ import { measureDepth } from "./tracking/depth";
 import { StrokeManager } from "./scene/strokeManager";
 import { initControls } from "./ui/controls";
 import { PinchDiagnostics } from "./ui/diagnostics";
+import { viewToWorld } from "./scene/viewMapping";
 
 async function boot(): Promise<void> {
   let video: HTMLVideoElement;
@@ -49,6 +50,9 @@ async function boot(): Promise<void> {
     new THREE.MeshStandardMaterial({ color: 0xff4488 }),
   );
   sceneCtx.scene.add(cursor);
+
+  // Reused each frame by viewToWorld() to avoid a per-frame allocation.
+  const worldTip = new THREE.Vector3();
 
   const overlayCanvas = document.querySelector<HTMLCanvasElement>("#overlay")!;
   const overlay = new DebugOverlay(overlayCanvas);
@@ -90,10 +94,13 @@ async function boot(): Promise<void> {
     const landmarks = tracker.detect(video, now);
     const input = handInput.update(landmarks, now);
 
-    cursor.visible = input.present;
-    cursor.position.set(input.tip.x, input.tip.y, input.tip.z);
+    // input.tip is view-relative; both consumers below need world coordinates.
+    viewToWorld(input.tip, sceneCtx, worldTip);
 
-    strokes.update(input);
+    cursor.visible = input.present;
+    cursor.position.copy(worldTip);
+
+    strokes.update({ ...input, tip: worldTip });
 
     if (landmarks) {
       // Dev instrumentation only: a second measureDepth() call alongside the one
