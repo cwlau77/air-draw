@@ -19,15 +19,28 @@ import {
  * looks from +z toward the origin, so +z is toward the viewer: a hand moving away
  * must produce a MORE NEGATIVE z. Hence (Z_REF - raw), not (raw - Z_REF).
  */
-export function estimateDepth(landmarks: Landmark[]): number {
+export interface DepthMeasurement {
+  /** Distance between landmarks 5 and 17 in isotropic units. */
+  palmWidth: number;
+  /** 1 / palmWidth. Grows as the hand moves AWAY from the camera. */
+  raw: number;
+  /** Final clamped scene-space z. */
+  z: number;
+}
+
+export function measureDepth(landmarks: Landmark[]): DepthMeasurement {
   const a = landmarks[LM_INDEX_MCP];
   const b = landmarks[LM_PINKY_MCP];
   // See LANDMARK_ASPECT (config.ts): x is normalised by frame width, y by frame
   // height, so the x-delta must be rescaled or palm rotation injects phantom depth.
   const palmWidth = Math.hypot((a.x - b.x) * LANDMARK_ASPECT, a.y - b.y);
-  if (palmWidth < 1e-6) return 0;
+  if (palmWidth < 1e-6) return { palmWidth, raw: 0, z: 0 };
 
   const raw = 1 / palmWidth;
   const z = (Z_REF - raw) * Z_SCALE;
-  return Math.min(Z_MAX, Math.max(Z_MIN, z));
+  return { palmWidth, raw, z: Math.min(Z_MAX, Math.max(Z_MIN, z)) };
+}
+
+export function estimateDepth(landmarks: Landmark[]): number {
+  return measureDepth(landmarks).z;
 }

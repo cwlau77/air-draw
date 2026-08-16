@@ -11,6 +11,13 @@ export interface PinchSample {
   pinching: boolean;
   drawing: boolean;
   hand: string; // "Left" | "Right" | "unknown"
+  /** Distance between landmarks 5 and 17, from measureDepth(). Optional: samples
+   *  recorded without a hand present carry no depth measurement. */
+  palmWidth?: number;
+  /** 1 / palmWidth, from measureDepth(). Optional, see palmWidth. */
+  depthRaw?: number;
+  /** Final clamped scene-space z, from measureDepth(). Optional, see palmWidth. */
+  z?: number;
 }
 
 const MAX_SAMPLES = 20000;
@@ -25,6 +32,17 @@ function percentile(sortedAsc: number[], p: number): number {
 interface GroupStats {
   hand: string;
   pinching: boolean;
+  count: number;
+  min: string;
+  p5: string;
+  p50: string;
+  p95: string;
+  max: string;
+  mean: string;
+}
+
+interface DepthStats {
+  field: string;
   count: number;
   min: string;
   p5: string;
@@ -70,6 +88,37 @@ function statsRow(hand: string, pinchingStr: string, ratios: number[]): GroupSta
 function sortRows(rows: GroupStats[]): GroupStats[] {
   rows.sort((a, b) => (a.hand === b.hand ? Number(a.pinching) - Number(b.pinching) : a.hand.localeCompare(b.hand)));
   return rows;
+}
+
+function depthStatsRow(field: string, values: number[]): DepthStats {
+  const sorted = [...values].sort((a, b) => a - b);
+  const sum = sorted.reduce((a, b) => a + b, 0);
+  const mean = sorted.length > 0 ? sum / sorted.length : NaN;
+  return {
+    field,
+    count: sorted.length,
+    min: sorted[0]?.toFixed(4) ?? "NaN",
+    p5: percentile(sorted, 5).toFixed(4),
+    p50: percentile(sorted, 50).toFixed(4),
+    p95: percentile(sorted, 95).toFixed(4),
+    max: sorted[sorted.length - 1]?.toFixed(4) ?? "NaN",
+    mean: mean.toFixed(4),
+  };
+}
+
+/** Depth internals (palmWidth, depthRaw, z) from measureDepth(), for resettling Z_REF
+ *  and Z_SCALE against real measurements instead of guesses. Samples recorded without
+ *  a depth measurement (no hand present) carry no values here and are excluded from
+ *  each field's stats rather than counted as zero. */
+function summarizeDepth(samples: PinchSample[]): DepthStats[] {
+  const palmWidths = samples.map((s) => s.palmWidth).filter((v): v is number => v !== undefined);
+  const depthRaws = samples.map((s) => s.depthRaw).filter((v): v is number => v !== undefined);
+  const zs = samples.map((s) => s.z).filter((v): v is number => v !== undefined);
+  return [
+    depthStatsRow("palmWidth", palmWidths),
+    depthStatsRow("depthRaw", depthRaws),
+    depthStatsRow("z", zs),
+  ];
 }
 
 /** Raw, unfiltered pinch ratio -- comparable against earlier measurements taken before
@@ -138,6 +187,8 @@ export class PinchDiagnostics {
     console.table(summarize(this.buffer));
     console.log("[air-draw] smoothed:");
     console.table(summarizeSmoothed(this.buffer));
+    console.log("[air-draw] depth:");
+    console.table(summarizeDepth(this.buffer));
   }
 
   async sample(label: string, durationMs = 3000): Promise<void> {
@@ -151,6 +202,8 @@ export class PinchDiagnostics {
     console.table(summarize(windowSamples));
     console.log("[air-draw] smoothed:");
     console.table(summarizeSmoothed(windowSamples));
+    console.log("[air-draw] depth:");
+    console.table(summarizeDepth(windowSamples));
   }
 
   reset(): void {

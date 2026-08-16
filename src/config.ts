@@ -90,9 +90,16 @@ export const ONE_EURO_D_CUTOFF = 1.0;
  * Depth from apparent palm width (distance between landmarks 5 and 17).
  * z_raw = 1 / palmWidth, then re-centered on Z_REF and scaled.
  * This is an approximation, not metric depth (PLAN.md §5 M4).
+ *
+ * Z_SCALE was raised from 0.35: at that value the effective depth travel was only
+ * about 1 scene unit against scene extents of roughly 7.5 (height) x 9.9 (width),
+ * so drawing felt geometrically shallow. Z_MAX is currently unreachable by
+ * construction — raw = 1/palmWidth is always positive, so (Z_REF - raw) can never
+ * reach +Z_MAX — which the depth instrumentation (measureDepth, PinchDiagnostics)
+ * is intended to resolve by measuring real raw values and resettling Z_REF.
  */
 export const Z_REF = 7.0;
-export const Z_SCALE = 0.35;
+export const Z_SCALE = 0.8;
 export const Z_MIN = -3;
 export const Z_MAX = 3;
 

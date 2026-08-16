@@ -7,6 +7,7 @@ import { showFatalError } from "./ui/errorDisplay";
 import { pinchRatio } from "./tracking/gestures";
 import { createScene, SceneError } from "./scene/setup";
 import { HandInputSource } from "./tracking/handInput";
+import { measureDepth } from "./tracking/depth";
 import { StrokeManager } from "./scene/strokeManager";
 import { initControls } from "./ui/controls";
 import { PinchDiagnostics } from "./ui/diagnostics";
@@ -95,6 +96,10 @@ async function boot(): Promise<void> {
     strokes.update(input);
 
     if (landmarks) {
+      // Dev instrumentation only: a second measureDepth() call alongside the one
+      // already inside HandInputSource, so the diagnostics buffer can see the
+      // intermediate palmWidth/raw/z values used to resettle Z_REF and Z_SCALE.
+      const depth = measureDepth(landmarks);
       diagnostics.record({
         t: now,
         ratio: pinchRatio(landmarks),
@@ -102,6 +107,9 @@ async function boot(): Promise<void> {
         pinching: input.pinching,
         drawing: input.drawing,
         hand: tracker.handedness ?? "unknown",
+        palmWidth: depth.palmWidth,
+        depthRaw: depth.raw,
+        z: depth.z,
       });
     }
 
