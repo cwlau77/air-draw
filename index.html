@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Air-Draw</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="stage">
+      <!-- Mirroring convention: the video is mirrored via CSS transform: scaleX(-1);
+           the overlay canvas is mirrored identically; the scene mapping compensates
+           with x_scene = (0.5 - lm.x) * SCENE_WIDTH. -->
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+      <canvas id="scene"></canvas>
+      <div id="error" hidden></div>
+      <div id="controls">
+        <button id="clear">Clear all</button>
+        <button id="toggle-debug">Debug: on</button>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
