@@ -4,13 +4,18 @@ body {
   background: #111;
   overflow: hidden;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  display: grid;
-  place-items: center;
   min-height: 100vh;
 }
 
+/* Fixed-position centring instead of a body-level grid: browser extensions can
+   inject nodes into <body> (observed: <bettercanvas-reminders>), and a sibling
+   like that would add a second grid row and throw off place-items centring.
+   Fixed positioning centres #stage against the viewport regardless of siblings. */
 #stage {
-  position: relative;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   aspect-ratio: 4 / 3;
   width: min(100vw, calc(100vh * 4 / 3));
   height: auto;
