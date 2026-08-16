@@ -28,21 +28,27 @@ export const LM_WRIST = 0;
 export const LM_INDEX_MCP = 5;
 export const LM_PINKY_MCP = 17;
 
-/** Pinch engages below this ratio. */
-export const PINCH_ON = 0.26;
-/** Pinch releases above this ratio. Deliberately higher than PINCH_ON (hysteresis). */
-export const PINCH_OFF = 0.30;
+/** Engage below this ratio. Measured pinched ratios reach at most 0.171 across both
+ *  hands; open hands never read below 0.92. Sits about 2x above the worst pinched value. */
+export const PINCH_ON = 0.35;
+/** Release past this ratio (subject to debounce below). Roughly the geometric midpoint
+ *  of the measured pinched/open gap, so low-end glitch spikes (observed up to 0.28) no
+ *  longer cross it at all. */
+export const PINCH_OFF = 0.5;
 
-/** Ratio must stay above PINCH_OFF this long before the pinch releases. Bridges the
- *  1-2 blurred frames that fast hand movement produces without delaying release
- *  perceptibly. Time-based, not frame-based: detect() returns cached landmarks on
- *  stale frames, so a frame counter would count duplicate samples. */
-export const PINCH_RELEASE_DELAY_MS = 60;
+/** Ratio must stay above PINCH_OFF this long before the pinch releases. A measured
+ *  tracking glitch spiked the ratio for ~133ms; this bridges it with margin. Costs
+ *  nothing visually — drawing already stops the instant PINCH_OFF is crossed, so this
+ *  only delays the decision to END the stroke, not point recording. Time-based, not
+ *  frame-based: detect() returns cached landmarks on stale frames, so a frame counter
+ *  would count duplicate samples. */
+export const PINCH_RELEASE_DELAY_MS = 150;
 
 /** Above this ratio the hand is unambiguously open, so release immediately with no
- *  debounce. The debounce exists to survive 1-2 motion-blurred frames near PINCH_OFF;
- *  a ratio this high is a deliberate release, not a blur artefact. */
-export const PINCH_RELEASE_HARD = 0.45;
+ *  debounce. Above the worst observed glitch spike (0.7047) but below the lowest
+ *  measured open reading (0.9227), so a deliberate open hand still stops drawing at
+ *  once while a glitch does not. */
+export const PINCH_RELEASE_HARD = 0.8;
 
 /** If the video has not advanced for this long, treat the hand as lost rather than
  *  returning stale landmarks forever. Guards against the webcam being unplugged or
