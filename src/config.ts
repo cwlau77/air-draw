@@ -30,3 +30,18 @@ export const SCENE_HEIGHT = 6;
 
 export const CAMERA_FOV = 50;
 export const CAMERA_START_Z = 8;
+
+/** One Euro filter. Lower minCutoff = smoother at rest; higher beta = more responsive when fast. */
+export const ONE_EURO_MIN_CUTOFF = 1.0;
+export const ONE_EURO_BETA = 0.007;
+export const ONE_EURO_D_CUTOFF = 1.0;
+
+/**
+ * Depth from apparent palm width (distance between landmarks 5 and 17).
+ * z_raw = 1 / palmWidth, then re-centered on Z_REF and scaled.
+ * This is an approximation, not metric depth (PLAN.md §5 M4).
+ */
+export const Z_REF = 7.0;
+export const Z_SCALE = 0.35;
+export const Z_MIN = -3;
+export const Z_MAX = 3;

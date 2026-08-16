@@ -4,8 +4,9 @@ import { startCamera, CameraError } from "./camera";
 import { createHandTracker, TrackerError } from "./tracking/handTracker";
 import { DebugOverlay } from "./ui/debugOverlay";
 import { showFatalError } from "./ui/errorDisplay";
-import { PinchDetector, pinchRatio } from "./tracking/gestures";
+import { pinchRatio } from "./tracking/gestures";
 import { createScene, SceneError } from "./scene/setup";
+import { HandInputSource } from "./tracking/handInput";
 
 async function boot(): Promise<void> {
   let video: HTMLVideoElement;
@@ -46,6 +47,12 @@ async function boot(): Promise<void> {
   );
   sceneCtx.scene.add(cube);
 
+  const cursor = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 16, 16),
+    new THREE.MeshStandardMaterial({ color: 0xff4488 }),
+  );
+  sceneCtx.scene.add(cursor);
+
   const overlayCanvas = document.querySelector<HTMLCanvasElement>("#overlay")!;
   const overlay = new DebugOverlay(overlayCanvas);
   window.addEventListener("resize", () => {
@@ -55,7 +62,7 @@ async function boot(): Promise<void> {
 
   let lastFrameMs = performance.now();
   let fps = 0;
-  const pinch = new PinchDetector();
+  const handInput = new HandInputSource();
 
   function frame(): void {
     requestAnimationFrame(frame);
@@ -66,11 +73,15 @@ async function boot(): Promise<void> {
     if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
 
     const landmarks = tracker.detect(video, now);
-    const pinching = pinch.update(landmarks);
+    const input = handInput.update(landmarks, now);
+
+    cursor.visible = input.present;
+    cursor.position.set(input.tip.x, input.tip.y, input.tip.z);
+
     overlay.draw(landmarks, {
       fps,
       pinchRatio: landmarks ? pinchRatio(landmarks) : null,
-      pinching,
+      pinching: input.pinching,
     });
     sceneCtx.render();
   }

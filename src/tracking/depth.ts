@@ -1,0 +1,19 @@
+import type { Landmark } from "./handTracker";
+import { LM_INDEX_MCP, LM_PINKY_MCP, Z_REF, Z_SCALE, Z_MIN, Z_MAX } from "../config";
+
+/**
+ * MediaPipe's per-landmark z is relative to the wrist and far too noisy for stroke
+ * depth. Apparent palm width is stable instead: a closer hand fills more of the frame.
+ * Known limitation (spec §5, PLAN.md §6): this drifts if the user leans toward the
+ * camera. That is accepted, not a bug to chase.
+ */
+export function estimateDepth(landmarks: Landmark[]): number {
+  const a = landmarks[LM_INDEX_MCP];
+  const b = landmarks[LM_PINKY_MCP];
+  const palmWidth = Math.hypot(a.x - b.x, a.y - b.y);
+  if (palmWidth < 1e-6) return 0;
+
+  const raw = 1 / palmWidth;
+  const z = (raw - Z_REF) * Z_SCALE;
+  return Math.min(Z_MAX, Math.max(Z_MIN, z));
+}
