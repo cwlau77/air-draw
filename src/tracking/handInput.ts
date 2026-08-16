@@ -3,13 +3,20 @@ import type { HandInput } from "./types";
 import { PinchDetector } from "./gestures";
 import { OneEuroFilter } from "./smoothing";
 import { estimateDepth } from "./depth";
-import { LM_THUMB_TIP, LM_INDEX_TIP, SCENE_WIDTH, SCENE_HEIGHT } from "../config";
+import { LM_THUMB_TIP, LM_INDEX_TIP, SCENE_WIDTH, SCENE_HEIGHT, Z_MEDIAN_WINDOW } from "../config";
+
+/** Median rejects impulsive spikes outright, where an average would be dragged toward them. */
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
+}
 
 export class HandInputSource {
   private pinch = new PinchDetector();
   private fx = new OneEuroFilter();
   private fy = new OneEuroFilter();
   private fz = new OneEuroFilter();
+  private zWindow: number[] = [];
   private last: HandInput = {
     tip: { x: 0, y: 0, z: 0 },
     pinching: false,
@@ -29,6 +36,7 @@ export class HandInputSource {
       this.fx.reset();
       this.fy.reset();
       this.fz.reset();
+      this.zWindow.length = 0;
       this.last = { tip: this.last.tip, pinching: this.pinch.update(null, nowMs), drawing: false, present: false };
       return this.last;
     }
@@ -48,6 +56,15 @@ export class HandInputSource {
     const rawY = -(tipY - 0.5) * SCENE_HEIGHT;
     const rawZ = estimateDepth(landmarks);
 
+    // Depth is a 1/x quantity, so a brief tracking collapse (palm width near zero)
+    // explodes into an impulsive z spike even after PALM_WIDTH_MIN floors the
+    // denominator. Median-filter before the One Euro filter sees it: a median rejects
+    // that kind of spike outright, where an average (or the One Euro filter alone)
+    // would be dragged toward it.
+    this.zWindow.push(rawZ);
+    if (this.zWindow.length > Z_MEDIAN_WINDOW) this.zWindow.shift();
+    const medianZ = median(this.zWindow);
+
     // update() must run before isDrawing is read below: isDrawing reflects the state
     // update() just computed, and object-literal fields evaluate top to bottom, so
     // hoisting this call keeps that dependency explicit instead of relying on literal
@@ -58,7 +75,7 @@ export class HandInputSource {
       tip: {
         x: this.fx.filter(rawX, nowMs),
         y: this.fy.filter(rawY, nowMs),
-        z: this.fz.filter(rawZ, nowMs),
+        z: this.fz.filter(medianZ, nowMs),
       },
       pinching,
       drawing: this.pinch.isDrawing,

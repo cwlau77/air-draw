@@ -103,6 +103,17 @@ export const Z_SCALE = 0.8;
 export const Z_MIN = -3;
 export const Z_MAX = 3;
 
+/**
+ * Lower bound on measured palm width before it is inverted for depth. Measured p5 is
+ * 0.1317 and the plausible minimum for a real hand is far above this floor, so it only
+ * catches tracking collapses — where palmWidth fell to 0.0139 and 1/palmWidth exploded
+ * to 71.8 against a p95 of 7.6.
+ */
+export const PALM_WIDTH_MIN = 0.04;
+
+/** Samples used for the median that rejects impulsive depth spikes. Odd values only. */
+export const Z_MEDIAN_WINDOW = 5;
+
 /** Preallocated capacity for the in-progress line. */
 export const MAX_STROKE_POINTS = 5000;
 /** Minimum spacing between recorded points; smaller = denser, jitterier geometry. */

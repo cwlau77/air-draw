@@ -7,6 +7,7 @@ import {
   Z_MIN,
   Z_MAX,
   LANDMARK_ASPECT,
+  PALM_WIDTH_MIN,
 } from "../config";
 
 /**
@@ -33,7 +34,13 @@ export function measureDepth(landmarks: Landmark[]): DepthMeasurement {
   const b = landmarks[LM_PINKY_MCP];
   // See LANDMARK_ASPECT (config.ts): x is normalised by frame width, y by frame
   // height, so the x-delta must be rescaled or palm rotation injects phantom depth.
-  const palmWidth = Math.hypot((a.x - b.x) * LANDMARK_ASPECT, a.y - b.y);
+  // Floored at PALM_WIDTH_MIN: a tracking collapse can send the raw hypot far below
+  // any plausible real palm width, and since depth is 1/palmWidth, a tiny denominator
+  // explodes into a huge z excursion. The floor only catches that collapse.
+  const palmWidth = Math.max(
+    PALM_WIDTH_MIN,
+    Math.hypot((a.x - b.x) * LANDMARK_ASPECT, a.y - b.y),
+  );
   if (palmWidth < 1e-6) return { palmWidth, raw: 0, z: 0 };
 
   const raw = 1 / palmWidth;
