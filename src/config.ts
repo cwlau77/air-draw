@@ -24,12 +24,18 @@ export const PINCH_ON = 0.26;
 /** Pinch releases above this ratio. Deliberately higher than PINCH_ON (hysteresis). */
 export const PINCH_OFF = 0.30;
 
-/** Scene extents the hand maps into. Roughly 4:3 to match the video. */
-export const SCENE_WIDTH = 8;
-export const SCENE_HEIGHT = 6;
-
 export const CAMERA_FOV = 50;
 export const CAMERA_START_Z = 8;
+
+/**
+ * Scene extents the hand maps into, derived from the camera frustum rather than
+ * guessed, so a fingertip at the edge of the video maps to the edge of the view.
+ * Exact at the z=0 plane; a sphere displaced in z still shifts slightly under
+ * perspective, which is expected and is real depth feedback, not an error.
+ */
+export const SCENE_HEIGHT =
+  2 * CAMERA_START_Z * Math.tan((CAMERA_FOV * Math.PI) / 360);
+export const SCENE_WIDTH = SCENE_HEIGHT * (VIDEO_WIDTH / VIDEO_HEIGHT);
 
 /** One Euro filter. Lower minCutoff = smoother at rest; higher beta = more responsive when fast. */
 export const ONE_EURO_MIN_CUTOFF = 1.0;
