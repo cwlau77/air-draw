@@ -50,6 +50,14 @@ export const PINCH_RELEASE_DELAY_MS = 150;
  *  once while a glitch does not. */
 export const PINCH_RELEASE_HARD = 0.8;
 
+/**
+ * Number of recent pinch-ratio samples used for the median that thresholding sees.
+ * Motion makes individual samples spike briefly (measured up to 0.73 while genuinely
+ * pinched, against a median of ~0.14). Those excursions are impulsive, so a median
+ * rejects them outright where an average would be dragged toward them. Odd values only.
+ */
+export const PINCH_MEDIAN_WINDOW = 5;
+
 /** If the video has not advanced for this long, treat the hand as lost rather than
  *  returning stale landmarks forever. Guards against the webcam being unplugged or
  *  taken by another app, which would otherwise freeze the cursor and never end the

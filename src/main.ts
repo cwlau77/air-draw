@@ -98,6 +98,7 @@ async function boot(): Promise<void> {
       diagnostics.record({
         t: now,
         ratio: pinchRatio(landmarks),
+        smoothed: handInput.smoothedPinchRatio,
         pinching: input.pinching,
         drawing: input.drawing,
         hand: tracker.handedness ?? "unknown",

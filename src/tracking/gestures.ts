@@ -8,6 +8,7 @@ import {
   PINCH_OFF,
   PINCH_RELEASE_DELAY_MS,
   PINCH_RELEASE_HARD,
+  PINCH_MEDIAN_WINDOW,
   LANDMARK_ASPECT,
 } from "../config";
 
@@ -29,11 +30,20 @@ export function pinchRatio(landmarks: Landmark[]): number {
   return distance(landmarks[LM_THUMB_TIP], landmarks[LM_INDEX_TIP]) / reference;
 }
 
+/** Median of the values, which rejects brief impulsive spikes that an average would follow. */
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
+}
+
 /** Two-threshold state machine. One threshold would flicker at the boundary. */
 export class PinchDetector {
   private pinching = false;
   /** When the ratio first rose above PINCH_OFF, or null if it is currently below. */
   private releaseSince: number | null = null;
+  private ratioWindow: number[] = [];
+  /** The median-filtered ratio thresholding actually used, or null before any sample. */
+  private smoothed: number | null = null;
 
   get isPinching(): boolean {
     return this.pinching;
@@ -48,29 +58,40 @@ export class PinchDetector {
     return this.pinching && this.releaseSince === null;
   }
 
+  get smoothedRatio(): number | null {
+    return this.smoothed;
+  }
+
   /** Returns the new pinch state. A null hand always releases immediately. */
   update(landmarks: Landmark[] | null, nowMs: number): boolean {
     if (!landmarks) {
       this.pinching = false;
       this.releaseSince = null;
+      this.ratioWindow.length = 0;
+      this.smoothed = null;
       return false;
     }
 
     const ratio = pinchRatio(landmarks);
 
+    this.ratioWindow.push(ratio);
+    if (this.ratioWindow.length > PINCH_MEDIAN_WINDOW) this.ratioWindow.shift();
+    const smoothedRatio = median(this.ratioWindow);
+    this.smoothed = smoothedRatio;
+
     if (!this.pinching) {
-      if (ratio < PINCH_ON) {
+      if (smoothedRatio < PINCH_ON) {
         this.pinching = true;
         this.releaseSince = null;
       }
       return this.pinching;
     }
 
-    if (ratio > PINCH_RELEASE_HARD) {
+    if (smoothedRatio > PINCH_RELEASE_HARD) {
       // Unambiguously open — a deliberate release, not a blur spike. Stop at once.
       this.pinching = false;
       this.releaseSince = null;
-    } else if (ratio > PINCH_OFF) {
+    } else if (smoothedRatio > PINCH_OFF) {
       // Motion blur can spike the ratio for a frame or two; only release if it stays high.
       if (this.releaseSince === null) this.releaseSince = nowMs;
       else if (nowMs - this.releaseSince >= PINCH_RELEASE_DELAY_MS) {

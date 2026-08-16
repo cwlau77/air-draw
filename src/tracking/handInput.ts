@@ -17,6 +17,12 @@ export class HandInputSource {
     present: false,
   };
 
+  /** Median-filtered pinch ratio thresholding actually used, or null before any sample.
+   *  Diagnostics-only: deliberately not part of HandInput, so the scene layer never sees it. */
+  get smoothedPinchRatio(): number | null {
+    return this.pinch.smoothedRatio;
+  }
+
   update(landmarks: Landmark[] | null, nowMs: number): HandInput {
     if (!landmarks) {
       // Reset filters so the hand reappearing elsewhere does not glide across the gap.

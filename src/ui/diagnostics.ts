@@ -6,7 +6,8 @@
 
 export interface PinchSample {
   t: number; // performance.now()
-  ratio: number; // pinch ratio; only finite samples are recorded
+  ratio: number; // raw pinch ratio; only finite samples are recorded
+  smoothed: number | null; // median-filtered ratio thresholding actually used, or null before the first sample
   pinching: boolean;
   drawing: boolean;
   hand: string; // "Left" | "Right" | "unknown"
@@ -33,7 +34,7 @@ interface GroupStats {
   mean: string;
 }
 
-function summarize(samples: PinchSample[]): GroupStats[] {
+function groupBy(samples: PinchSample[]): Map<string, PinchSample[]> {
   const groups = new Map<string, PinchSample[]>();
   for (const s of samples) {
     // Delimiter is safe: hand is always "Left"/"Right"/"unknown" and pinching
@@ -46,28 +47,57 @@ function summarize(samples: PinchSample[]): GroupStats[] {
     }
     arr.push(s);
   }
+  return groups;
+}
 
+function statsRow(hand: string, pinchingStr: string, ratios: number[]): GroupStats {
+  const sorted = [...ratios].sort((a, b) => a - b);
+  const sum = sorted.reduce((a, b) => a + b, 0);
+  const mean = sorted.length > 0 ? sum / sorted.length : NaN;
+  return {
+    hand,
+    pinching: pinchingStr === "true",
+    count: sorted.length,
+    min: sorted[0]?.toFixed(4) ?? "NaN",
+    p5: percentile(sorted, 5).toFixed(4),
+    p50: percentile(sorted, 50).toFixed(4),
+    p95: percentile(sorted, 95).toFixed(4),
+    max: sorted[sorted.length - 1]?.toFixed(4) ?? "NaN",
+    mean: mean.toFixed(4),
+  };
+}
+
+function sortRows(rows: GroupStats[]): GroupStats[] {
+  rows.sort((a, b) => (a.hand === b.hand ? Number(a.pinching) - Number(b.pinching) : a.hand.localeCompare(b.hand)));
+  return rows;
+}
+
+/** Raw, unfiltered pinch ratio -- comparable against earlier measurements taken before
+ *  median filtering was introduced. */
+function summarize(samples: PinchSample[]): GroupStats[] {
+  const groups = groupBy(samples);
   const rows: GroupStats[] = [];
   for (const [key, arr] of groups) {
     const [hand, pinchingStr] = key.split("|");
-    const ratios = arr.map((s) => s.ratio).sort((a, b) => a - b);
-    const sum = ratios.reduce((a, b) => a + b, 0);
-    const mean = ratios.length > 0 ? sum / ratios.length : NaN;
-    rows.push({
-      hand,
-      pinching: pinchingStr === "true",
-      count: ratios.length,
-      min: ratios[0]?.toFixed(4) ?? "NaN",
-      p5: percentile(ratios, 5).toFixed(4),
-      p50: percentile(ratios, 50).toFixed(4),
-      p95: percentile(ratios, 95).toFixed(4),
-      max: ratios[ratios.length - 1]?.toFixed(4) ?? "NaN",
-      mean: mean.toFixed(4),
-    });
+    rows.push(statsRow(hand, pinchingStr, arr.map((s) => s.ratio)));
   }
+  return sortRows(rows);
+}
 
-  rows.sort((a, b) => (a.hand === b.hand ? Number(a.pinching) - Number(b.pinching) : a.hand.localeCompare(b.hand)));
-  return rows;
+/** Median-filtered ratio thresholding actually used. Samples recorded before the first
+ *  filter output (smoothed === null) are excluded rather than treated as 0 or dropped
+ *  silently mixed in -- they carry no smoothed value to summarize. */
+function summarizeSmoothed(samples: PinchSample[]): GroupStats[] {
+  const groups = groupBy(samples);
+  const rows: GroupStats[] = [];
+  for (const [key, arr] of groups) {
+    const [hand, pinchingStr] = key.split("|");
+    const smoothedRatios = arr
+      .map((s) => s.smoothed)
+      .filter((v): v is number => v !== null);
+    rows.push(statsRow(hand, pinchingStr, smoothedRatios));
+  }
+  return sortRows(rows);
 }
 
 export class PinchDiagnostics {
@@ -104,8 +134,10 @@ export class PinchDiagnostics {
   }
 
   stats(): void {
-    const rows = summarize(this.buffer);
-    console.table(rows);
+    console.log("[air-draw] raw:");
+    console.table(summarize(this.buffer));
+    console.log("[air-draw] smoothed:");
+    console.table(summarizeSmoothed(this.buffer));
   }
 
   async sample(label: string, durationMs = 3000): Promise<void> {
@@ -115,8 +147,10 @@ export class PinchDiagnostics {
     const end = performance.now();
     const windowSamples = this.buffer.filter((s) => s.t >= start && s.t <= end);
     console.log(`[air-draw] results for "${label}" (${windowSamples.length} samples):`);
-    const rows = summarize(windowSamples);
-    console.table(rows);
+    console.log("[air-draw] raw:");
+    console.table(summarize(windowSamples));
+    console.log("[air-draw] smoothed:");
+    console.table(summarizeSmoothed(windowSamples));
   }
 
   reset(): void {
