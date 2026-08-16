@@ -6,6 +6,7 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   display: grid;
   place-items: center;
+  min-height: 100vh;
 }
 
 #stage {
