@@ -1,6 +1,6 @@
 import type { Landmark } from "./handTracker";
 import type { HandInput } from "./types";
-import { PinchDetector } from "./gestures";
+import { PinchDetector, FistDetector } from "./gestures";
 import { OneEuroFilter } from "./smoothing";
 import { estimateDepth } from "./depth";
 import { median } from "./median";
@@ -8,6 +8,7 @@ import { LM_THUMB_TIP, LM_INDEX_TIP, SCENE_WIDTH, SCENE_HEIGHT, Z_MEDIAN_WINDOW 
 
 export class HandInputSource {
   private pinch = new PinchDetector();
+  private fist = new FistDetector();
   private fx = new OneEuroFilter();
   private fy = new OneEuroFilter();
   private fz = new OneEuroFilter();
@@ -16,6 +17,7 @@ export class HandInputSource {
     tip: { x: 0, y: 0, z: 0 },
     pinching: false,
     drawing: false,
+    erasing: false,
     present: false,
   };
 
@@ -25,6 +27,10 @@ export class HandInputSource {
     return this.pinch.smoothedRatio;
   }
 
+  get smoothedFistRatio(): number | null {
+    return this.fist.smoothedRatio;
+  }
+
   update(landmarks: Landmark[] | null, nowMs: number): HandInput {
     if (!landmarks) {
       // Reset filters so the hand reappearing elsewhere does not glide across the gap.
@@ -32,7 +38,14 @@ export class HandInputSource {
       this.fy.reset();
       this.fz.reset();
       this.zWindow.length = 0;
-      this.last = { tip: this.last.tip, pinching: this.pinch.update(null, nowMs), drawing: false, present: false };
+      this.fist.update(null);
+      this.last = {
+        tip: this.last.tip,
+        pinching: this.pinch.update(null, nowMs),
+        drawing: false,
+        erasing: false,
+        present: false,
+      };
       return this.last;
     }
 
@@ -65,6 +78,8 @@ export class HandInputSource {
     // hoisting this call keeps that dependency explicit instead of relying on literal
     // property order (which a future "cosmetic" reordering could silently break).
     const pinching = this.pinch.update(landmarks, nowMs);
+    const drawing = this.pinch.isDrawing;
+    const erasing = this.fist.update(landmarks);
 
     this.last = {
       tip: {
@@ -72,8 +87,12 @@ export class HandInputSource {
         y: this.fy.filter(rawY, nowMs),
         z: this.fz.filter(medianZ, nowMs),
       },
-      pinching,
-      drawing: this.pinch.isDrawing,
+      // Fist takes strict precedence. In a closed fist the thumb lies across the curled
+      // fingers, so thumb-to-index distance can fall below PINCH_ON and the pinch would
+      // engage too — every erase gesture would leave a short spurious stroke behind.
+      pinching: erasing ? false : pinching,
+      drawing: erasing ? false : drawing,
+      erasing,
       present: true,
     };
     return this.last;

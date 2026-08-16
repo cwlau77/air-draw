@@ -18,6 +18,10 @@ export interface PinchSample {
   depthRaw?: number;
   /** Final clamped scene-space z, from measureDepth(). Optional, see palmWidth. */
   z?: number;
+  /** Raw fist ratio, present only when a hand was detected. */
+  fistRaw?: number;
+  /** Median-filtered fist ratio actually used for thresholding. */
+  fistSmoothed?: number | null;
 }
 
 const MAX_SAMPLES = 20000;
@@ -121,6 +125,17 @@ function summarizeDepth(samples: PinchSample[]): DepthStats[] {
   ];
 }
 
+/** Fist ratio (raw and median-filtered), for setting FIST_ON/FIST_OFF from measured
+ *  distributions. Samples recorded without a hand present carry no fist measurement
+ *  and are excluded from each field's stats rather than counted as zero. */
+function summarizeFist(samples: PinchSample[]): DepthStats[] {
+  const raws = samples.map((s) => s.fistRaw).filter((v): v is number => v !== undefined);
+  const smootheds = samples
+    .map((s) => s.fistSmoothed)
+    .filter((v): v is number => v !== undefined && v !== null);
+  return [depthStatsRow("fistRaw", raws), depthStatsRow("fistSmoothed", smootheds)];
+}
+
 /** Raw, unfiltered pinch ratio -- comparable against earlier measurements taken before
  *  median filtering was introduced. */
 function summarize(samples: PinchSample[]): GroupStats[] {
@@ -189,6 +204,8 @@ export class PinchDiagnostics {
     console.table(summarizeSmoothed(this.buffer));
     console.log("[air-draw] depth:");
     console.table(summarizeDepth(this.buffer));
+    console.log("[air-draw] fist:");
+    console.table(summarizeFist(this.buffer));
   }
 
   async sample(label: string, durationMs = 3000): Promise<void> {
@@ -204,6 +221,8 @@ export class PinchDiagnostics {
     console.table(summarizeSmoothed(windowSamples));
     console.log("[air-draw] depth:");
     console.table(summarizeDepth(windowSamples));
+    console.log("[air-draw] fist:");
+    console.table(summarizeFist(windowSamples));
   }
 
   reset(): void {

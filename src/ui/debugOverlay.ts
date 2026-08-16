@@ -3,6 +3,8 @@ export interface DebugInfo {
   pinchRatio: number | null;
   pinching: boolean;
   drawing: boolean;
+  erasing: boolean;
+  fistRatio: number | null;
   /**
    * Present only when the diagnostics instrument is enabled (`?diag`). When absent,
    * the range and flicker readouts are omitted rather than shown as empty — they are
@@ -71,6 +73,8 @@ export class DebugOverlay {
       `pinch ratio ${ratio}`,
       `pinching ${info.pinching}`,
       `drawing ${info.drawing}`,
+      `erasing ${info.erasing}`,
+      `fist ratio ${info.fistRatio === null ? "--" : info.fistRatio.toFixed(3)}`,
     ];
     if (info.diagnostics) {
       const r = info.diagnostics.rollingRange;

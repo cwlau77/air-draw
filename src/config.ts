@@ -27,6 +27,8 @@ export const LM_INDEX_TIP = 8;
 export const LM_WRIST = 0;
 export const LM_INDEX_MCP = 5;
 export const LM_PINKY_MCP = 17;
+/** Fingertip landmarks used for fist detection: index, middle, ring, pinky tips. */
+export const LM_FINGERTIPS = [8, 12, 16, 20] as const;
 
 /** Engage below this ratio. Measured (airDrawDiag, 8392 samples): open-hand minimum
  *  is 0.254, only 0.004 above the old 0.25 — almost no margin against an accidental
@@ -129,6 +131,19 @@ export const PALM_WIDTH_MIN = 0.04;
 
 /** Samples used for the median that rejects impulsive depth spikes. Odd values only. */
 export const Z_MEDIAN_WINDOW = 5;
+
+/**
+ * Fist engages below this ratio and releases above FIST_OFF. PLACEHOLDER VALUES —
+ * they have NOT been measured. Record fistRatio with airDrawDiag under ?diag, take
+ * distributions for a closed fist, a relaxed open hand and an active pinch, then set
+ * these from the gap. The left hand is expected to be the binding constraint, as it
+ * was for pinch.
+ */
+export const FIST_ON = 0.9;
+export const FIST_OFF = 1.1;
+
+/** Samples for the median that rejects impulsive fist-ratio spikes. Odd values only. */
+export const FIST_MEDIAN_WINDOW = 5;
 
 /** Preallocated capacity for the in-progress line. */
 export const MAX_STROKE_POINTS = 5000;

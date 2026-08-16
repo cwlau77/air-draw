@@ -5,11 +5,16 @@ import {
   LM_INDEX_TIP,
   LM_WRIST,
   LM_INDEX_MCP,
+  LM_PINKY_MCP,
+  LM_FINGERTIPS,
   PINCH_ON,
   PINCH_OFF,
   PINCH_RELEASE_DELAY_MS,
   PINCH_RELEASE_HARD,
   PINCH_MEDIAN_WINDOW,
+  FIST_ON,
+  FIST_OFF,
+  FIST_MEDIAN_WINDOW,
   LANDMARK_ASPECT,
 } from "../config";
 
@@ -94,5 +99,52 @@ export class PinchDetector {
       this.releaseSince = null;
     }
     return this.pinching;
+  }
+}
+
+/**
+ * Mean fingertip-to-wrist distance, normalised by palm width so the value is roughly
+ * scale-invariant as the hand moves toward or away from the camera. Curled fingers sit
+ * closer to the wrist, so a low ratio means a fist.
+ *
+ * Uses the same LANDMARK_ASPECT-corrected distance() as pinchRatio: x and y are
+ * normalised by different frame dimensions, so an uncorrected hypot would make this
+ * depend on hand ROTATION rather than finger curl.
+ */
+export function fistRatio(landmarks: Landmark[]): number {
+  const reference = distance(landmarks[LM_INDEX_MCP], landmarks[LM_PINKY_MCP]);
+  if (reference < 1e-6) return Number.POSITIVE_INFINITY;
+  const wrist = landmarks[LM_WRIST];
+  let total = 0;
+  for (const tip of LM_FINGERTIPS) total += distance(wrist, landmarks[tip]);
+  return total / LM_FINGERTIPS.length / reference;
+}
+
+/** Two-threshold state machine with a median filter, mirroring PinchDetector. */
+export class FistDetector {
+  private closed = false;
+  private ratioWindow: number[] = [];
+  private smoothed: number | null = null;
+
+  get smoothedRatio(): number | null {
+    return this.smoothed;
+  }
+
+  update(landmarks: Landmark[] | null): boolean {
+    if (!landmarks) {
+      this.closed = false;
+      this.ratioWindow.length = 0;
+      this.smoothed = null;
+      return false;
+    }
+
+    this.ratioWindow.push(fistRatio(landmarks));
+    if (this.ratioWindow.length > FIST_MEDIAN_WINDOW) this.ratioWindow.shift();
+    const ratio = median(this.ratioWindow);
+    this.smoothed = ratio;
+
+    if (!this.closed && ratio < FIST_ON) this.closed = true;
+    else if (this.closed && ratio > FIST_OFF) this.closed = false;
+    return this.closed;
   }
 }

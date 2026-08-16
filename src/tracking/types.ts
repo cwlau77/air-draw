@@ -25,5 +25,9 @@ export interface HandInput {
   /** True only while points should be appended; goes false as soon as the fingers
    *  begin to open, so the release gesture is not drawn. */
   drawing: boolean;
+  /** True while the erase gesture (a fist) is held. Mutually exclusive with pinching
+   *  and drawing: the two gestures overlap geometrically, so HandInputSource forces
+   *  pinching and drawing false whenever this is true. */
+  erasing: boolean;
   present: boolean;
 }

@@ -4,7 +4,7 @@ import { startCamera, CameraError } from "./camera";
 import { createHandTracker, TrackerError } from "./tracking/handTracker";
 import { DebugOverlay } from "./ui/debugOverlay";
 import { showFatalError } from "./ui/errorDisplay";
-import { pinchRatio } from "./tracking/gestures";
+import { pinchRatio, fistRatio } from "./tracking/gestures";
 import { createScene, SceneError } from "./scene/setup";
 import { HandInputSource } from "./tracking/handInput";
 import { measureDepth } from "./tracking/depth";
@@ -125,6 +125,8 @@ async function boot(): Promise<void> {
         palmWidth: depth.palmWidth,
         depthRaw: depth.raw,
         z: depth.z,
+        fistRaw: fistRatio(landmarks),
+        fistSmoothed: handInput.smoothedFistRatio,
       });
     }
 
@@ -133,6 +135,8 @@ async function boot(): Promise<void> {
       pinchRatio: landmarks ? pinchRatio(landmarks) : null,
       pinching: input.pinching,
       drawing: input.drawing,
+      erasing: input.erasing,
+      fistRatio: landmarks ? fistRatio(landmarks) : null,
       diagnostics: diagnostics
         ? {
             rollingRange: diagnostics.rolling(),
