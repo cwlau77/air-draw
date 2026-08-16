@@ -7,6 +7,7 @@ import { showFatalError } from "./ui/errorDisplay";
 import { pinchRatio } from "./tracking/gestures";
 import { createScene, SceneError } from "./scene/setup";
 import { HandInputSource } from "./tracking/handInput";
+import { Stroke } from "./scene/stroke";
 
 async function boot(): Promise<void> {
   let video: HTMLVideoElement;
@@ -40,13 +41,6 @@ async function boot(): Promise<void> {
     throw err;
   }
 
-  // TEMPORARY reference object — deleted in Task 6 once strokes render.
-  const cube = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshStandardMaterial({ color: 0x44aaff }),
-  );
-  sceneCtx.scene.add(cube);
-
   const cursor = new THREE.Mesh(
     new THREE.SphereGeometry(0.12, 16, 16),
     new THREE.MeshStandardMaterial({ color: 0xff4488 }),
@@ -63,6 +57,7 @@ async function boot(): Promise<void> {
   let lastFrameMs = performance.now();
   let fps = 0;
   const handInput = new HandInputSource();
+  let activeStroke: Stroke | null = null;
 
   function frame(): void {
     requestAnimationFrame(frame);
@@ -77,6 +72,14 @@ async function boot(): Promise<void> {
 
     cursor.visible = input.present;
     cursor.position.set(input.tip.x, input.tip.y, input.tip.z);
+
+    if (input.pinching && input.present) {
+      if (!activeStroke) activeStroke = new Stroke(sceneCtx.scene);
+      activeStroke.addPoint(input.tip);
+    } else if (activeStroke) {
+      activeStroke.finalize();
+      activeStroke = null;
+    }
 
     overlay.draw(landmarks, {
       fps,

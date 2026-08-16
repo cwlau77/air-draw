@@ -51,3 +51,13 @@ export const Z_REF = 7.0;
 export const Z_SCALE = 0.35;
 export const Z_MIN = -3;
 export const Z_MAX = 3;
+
+/** Preallocated capacity for the in-progress line. */
+export const MAX_STROKE_POINTS = 5000;
+/** Minimum spacing between recorded points; smaller = denser, jitterier geometry. */
+export const MIN_POINT_DISTANCE = 0.02;
+/** Finished-stroke geometry. */
+export const TUBE_RADIUS = 0.04;
+export const TUBE_SEGMENTS_PER_POINT = 4;
+export const TUBE_RADIAL_SEGMENTS = 8;
+export const STROKE_COLOR = 0xffcc33;
