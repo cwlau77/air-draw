@@ -20,9 +20,9 @@ export const LM_INDEX_MCP = 5;
 export const LM_PINKY_MCP = 17;
 
 /** Pinch engages below this ratio. */
-export const PINCH_ON = 0.26;
+export const PINCH_ON = 0.13;
 /** Pinch releases above this ratio. Deliberately higher than PINCH_ON (hysteresis). */
-export const PINCH_OFF = 0.30;
+export const PINCH_OFF = 0.16;
 
 export const CAMERA_FOV = 50;
 export const CAMERA_START_Z = 8;
