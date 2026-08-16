@@ -6,6 +6,7 @@ import {
   LM_INDEX_MCP,
   PINCH_ON,
   PINCH_OFF,
+  PINCH_RELEASE_DELAY_MS,
 } from "../config";
 
 function distance(a: Landmark, b: Landmark): number {
@@ -26,20 +27,42 @@ export function pinchRatio(landmarks: Landmark[]): number {
 /** Two-threshold state machine. One threshold would flicker at the boundary. */
 export class PinchDetector {
   private pinching = false;
+  /** When the ratio first rose above PINCH_OFF, or null if it is currently below. */
+  private releaseSince: number | null = null;
 
   get isPinching(): boolean {
     return this.pinching;
   }
 
-  /** Returns the new pinch state. A null hand always releases. */
-  update(landmarks: Landmark[] | null): boolean {
+  /** Returns the new pinch state. A null hand always releases immediately. */
+  update(landmarks: Landmark[] | null, nowMs: number): boolean {
     if (!landmarks) {
       this.pinching = false;
+      this.releaseSince = null;
       return false;
     }
+
     const ratio = pinchRatio(landmarks);
-    if (!this.pinching && ratio < PINCH_ON) this.pinching = true;
-    else if (this.pinching && ratio > PINCH_OFF) this.pinching = false;
+
+    if (!this.pinching) {
+      if (ratio < PINCH_ON) {
+        this.pinching = true;
+        this.releaseSince = null;
+      }
+      return this.pinching;
+    }
+
+    if (ratio > PINCH_OFF) {
+      // Motion blur can spike the ratio for a frame or two; only release if it stays high.
+      if (this.releaseSince === null) this.releaseSince = nowMs;
+      else if (nowMs - this.releaseSince >= PINCH_RELEASE_DELAY_MS) {
+        this.pinching = false;
+        this.releaseSince = null;
+      }
+    } else {
+      // Dipped back below the threshold — the spike was transient, so restart the timer.
+      this.releaseSince = null;
+    }
     return this.pinching;
   }
 }

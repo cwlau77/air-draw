@@ -22,7 +22,7 @@ export class HandInputSource {
       this.fx.reset();
       this.fy.reset();
       this.fz.reset();
-      this.last = { tip: this.last.tip, pinching: this.pinch.update(null), present: false };
+      this.last = { tip: this.last.tip, pinching: this.pinch.update(null, nowMs), present: false };
       return this.last;
     }
 
@@ -41,7 +41,7 @@ export class HandInputSource {
         y: this.fy.filter(rawY, nowMs),
         z: this.fz.filter(rawZ, nowMs),
       },
-      pinching: this.pinch.update(landmarks),
+      pinching: this.pinch.update(landmarks, nowMs),
       present: true,
     };
     return this.last;

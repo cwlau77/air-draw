@@ -24,6 +24,12 @@ export const PINCH_ON = 0.26;
 /** Pinch releases above this ratio. Deliberately higher than PINCH_ON (hysteresis). */
 export const PINCH_OFF = 0.30;
 
+/** Ratio must stay above PINCH_OFF this long before the pinch releases. Bridges the
+ *  1-2 blurred frames that fast hand movement produces without delaying release
+ *  perceptibly. Time-based, not frame-based: detect() returns cached landmarks on
+ *  stale frames, so a frame counter would count duplicate samples. */
+export const PINCH_RELEASE_DELAY_MS = 60;
+
 export const CAMERA_FOV = 50;
 export const CAMERA_START_Z = 8;
 
