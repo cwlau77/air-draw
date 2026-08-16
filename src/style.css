@@ -4,9 +4,16 @@ body {
   background: #111;
   overflow: hidden;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  display: grid;
+  place-items: center;
 }
 
-#stage { position: relative; width: 100vw; height: 100vh; }
+#stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  width: min(100vw, calc(100vh * 4 / 3));
+  height: auto;
+}
 
 #video, #overlay, #scene {
   position: absolute;
@@ -15,7 +22,9 @@ body {
   height: 100%;
 }
 
-/* Mirroring convention: video and overlay are mirrored identically. */
+/* Mirroring convention: the video is mirrored via CSS transform: scaleX(-1); the
+   overlay canvas is mirrored identically; the scene mapping compensates with
+   x_scene = (0.5 - lm.x) * SCENE_WIDTH. */
 #video { object-fit: cover; transform: scaleX(-1); }
 #overlay { transform: scaleX(-1); pointer-events: none; }
 #scene { pointer-events: auto; }
