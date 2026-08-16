@@ -3,6 +3,7 @@ import { startCamera, CameraError } from "./camera";
 import { createHandTracker, TrackerError } from "./tracking/handTracker";
 import { DebugOverlay } from "./ui/debugOverlay";
 import { showFatalError } from "./ui/errorDisplay";
+import { PinchDetector, pinchRatio } from "./tracking/gestures";
 
 async function boot(): Promise<void> {
   let video: HTMLVideoElement;
@@ -40,6 +41,7 @@ async function boot(): Promise<void> {
 
   let lastFrameMs = performance.now();
   let fps = 0;
+  const pinch = new PinchDetector();
 
   function frame(): void {
     requestAnimationFrame(frame);
@@ -50,7 +52,12 @@ async function boot(): Promise<void> {
     if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
 
     const landmarks = tracker.detect(video, now);
-    overlay.draw(landmarks, { fps, pinchRatio: null, pinching: false });
+    const pinching = pinch.update(landmarks);
+    overlay.draw(landmarks, {
+      fps,
+      pinchRatio: landmarks ? pinchRatio(landmarks) : null,
+      pinching,
+    });
   }
 
   requestAnimationFrame(frame);

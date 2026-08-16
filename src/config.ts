@@ -18,3 +18,8 @@ export const LM_INDEX_TIP = 8;
 export const LM_WRIST = 0;
 export const LM_INDEX_MCP = 5;
 export const LM_PINKY_MCP = 17;
+
+/** Pinch engages below this ratio. */
+export const PINCH_ON = 0.35;
+/** Pinch releases above this ratio. Deliberately higher than PINCH_ON (hysteresis). */
+export const PINCH_OFF = 0.45;
