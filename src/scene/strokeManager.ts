@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { Stroke } from "./stroke";
+import { ActionHistory } from "./history";
 import type { HandInput } from "../tracking/types";
 import { STROKE_COLOR, TUBE_RADIUS } from "../config";
 
@@ -8,6 +9,7 @@ export class StrokeManager {
   private active: Stroke | null = null;
   private color: number = STROKE_COLOR;
   private radius: number = TUBE_RADIUS;
+  private history = new ActionHistory();
 
   constructor(private scene: THREE.Scene) {}
 
@@ -44,9 +46,31 @@ export class StrokeManager {
     if (!this.active) return;
     this.active.finalize();
     // A stroke of 0 points built no geometry; drop it rather than retain it.
-    if (this.active.pointCount >= 1) this.finished.push(this.active);
-    else this.active.dispose();
+    if (this.active.pointCount >= 1) {
+      this.finished.push(this.active);
+      this.history.push({ type: "draw", stroke: this.active });
+    } else {
+      this.active.dispose();
+    }
     this.active = null;
+  }
+
+  /** Reverses the most recent draw or erase. Returns false if there was nothing to undo. */
+  undo(): boolean {
+    const action = this.history.undo();
+    if (!action) return false;
+
+    if (action.type === "draw") {
+      const i = this.finished.indexOf(action.stroke);
+      if (i !== -1) this.finished.splice(i, 1);
+      action.stroke.dispose();
+    } else {
+      for (const stroke of action.strokes) {
+        stroke.restore();
+        this.finished.push(stroke);
+      }
+    }
+    return true;
   }
 
   /** Disposes geometries and materials, not just scene removal (PLAN.md §6). */
@@ -54,5 +78,6 @@ export class StrokeManager {
     this.endActive();
     for (const stroke of this.finished) stroke.dispose();
     this.finished = [];
+    this.history.clear();
   }
 }

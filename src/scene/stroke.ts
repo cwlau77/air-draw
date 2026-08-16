@@ -126,6 +126,19 @@ export class Stroke {
     this.scene.add(this.finalMesh);
   }
 
+  /**
+   * Removes the finished mesh from the scene WITHOUT disposing it, so an erase can be
+   * undone. Disposal happens only when the action is evicted from the history.
+   */
+  hide(): void {
+    if (this.finalMesh) this.scene.remove(this.finalMesh);
+  }
+
+  /** Puts a hidden stroke back into the scene. */
+  restore(): void {
+    if (this.finalMesh) this.scene.add(this.finalMesh);
+  }
+
   /** Frees GPU memory. Scene removal alone leaks (PLAN.md §6). */
   dispose(): void {
     if (!this.finalized) {

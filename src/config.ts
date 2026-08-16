@@ -167,3 +167,10 @@ export const STROKE_PALETTE = [
 
 /** Selectable brush radii, small to large. TUBE_RADIUS (0.04) is the default middle value. */
 export const STROKE_RADII = [0.02, 0.04, 0.08] as const;
+
+/**
+ * Actions retained for undo. Erased strokes are kept alive (removed from the scene but
+ * not disposed) until their action falls off the end, so this bounds how much erased
+ * geometry can accumulate over a session.
+ */
+export const HISTORY_DEPTH = 20;
