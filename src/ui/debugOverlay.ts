@@ -3,8 +3,15 @@ export interface DebugInfo {
   pinchRatio: number | null;
   pinching: boolean;
   drawing: boolean;
-  rollingRange: { min: number; max: number } | null;
-  flickerCount: number;
+  /**
+   * Present only when the diagnostics instrument is enabled (`?diag`). When absent,
+   * the range and flicker readouts are omitted rather than shown as empty — they are
+   * meaningless without a recording buffer behind them.
+   */
+  diagnostics?: {
+    rollingRange: { min: number; max: number } | null;
+    flickerCount: number;
+  };
 }
 
 export class DebugOverlay {
@@ -59,16 +66,23 @@ export class DebugOverlay {
     ctx.fillStyle = info.pinching ? "#ff0" : "#eee";
     ctx.font = "14px ui-monospace, monospace";
     const ratio = info.pinchRatio === null ? "--" : info.pinchRatio.toFixed(3);
-    ctx.fillText(`fps ${info.fps.toFixed(0)}`, 12, 24);
-    ctx.fillText(`pinch ratio ${ratio}`, 12, 44);
-    ctx.fillText(`pinching ${info.pinching}`, 12, 64);
-    ctx.fillText(`drawing ${info.drawing}`, 12, 104);
-    const range = info.rollingRange
-      ? `${info.rollingRange.min.toFixed(4)}-${info.rollingRange.max.toFixed(4)}`
-      : "--";
-    ctx.fillText(`range ${range}`, 12, 124);
-    ctx.fillText(`flickers ${info.flickerCount}`, 12, 144);
-    ctx.fillText(landmarks ? "hand: present" : "hand: none", 12, 164);
+    const lines = [
+      `fps ${info.fps.toFixed(0)}`,
+      `pinch ratio ${ratio}`,
+      `pinching ${info.pinching}`,
+      `drawing ${info.drawing}`,
+    ];
+    if (info.diagnostics) {
+      const r = info.diagnostics.rollingRange;
+      lines.push(
+        `range ${r ? `${r.min.toFixed(4)}-${r.max.toFixed(4)}` : "--"}`,
+        `flickers ${info.diagnostics.flickerCount}`,
+      );
+    }
+    lines.push(landmarks ? "hand: present" : "hand: none");
+    // Laid out sequentially rather than at fixed y offsets, so optional lines cannot
+    // leave a gap in the middle of the readout.
+    lines.forEach((line, i) => ctx.fillText(line, 12, 24 + i * 20));
     ctx.restore();
   }
 }

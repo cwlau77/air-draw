@@ -66,12 +66,20 @@ async function boot(): Promise<void> {
   const handInput = new HandInputSource();
   const strokes = new StrokeManager(sceneCtx.scene);
 
-  const diagnostics = new PinchDiagnostics();
-  // Debug handle for console use: airDrawDiag.sample("right-pinched"), .stats(), .reset()
-  (window as any).airDrawDiag = diagnostics;
-  console.log(
-    '[air-draw] diagnostics: airDrawDiag.sample("right-pinched"), .stats(), .reset()',
-  );
+  // Measurement instrumentation is opt-in via ?diag. It is a development tool: it
+  // records every frame into a ring buffer, exposes a window global, and needs a second
+  // measureDepth() call per frame. Gated on a URL param rather than import.meta.env.DEV
+  // because this project is run through `npm run dev` for everything, so a DEV check
+  // would leave it permanently on and gate nothing.
+  const diagEnabled = new URLSearchParams(window.location.search).has("diag");
+  const diagnostics = diagEnabled ? new PinchDiagnostics() : null;
+  if (diagnostics) {
+    // Debug handle for console use: airDrawDiag.sample("right-pinched"), .stats(), .reset()
+    (window as any).airDrawDiag = diagnostics;
+    console.log(
+      '[air-draw] diagnostics: airDrawDiag.sample("right-pinched"), .stats(), .reset()',
+    );
+  }
 
   initControls({
     onClear: () => strokes.clear(),
@@ -102,10 +110,10 @@ async function boot(): Promise<void> {
 
     strokes.update({ ...input, tip: worldTip });
 
-    if (landmarks) {
-      // Dev instrumentation only: a second measureDepth() call alongside the one
-      // already inside HandInputSource, so the diagnostics buffer can see the
-      // intermediate palmWidth/raw/z values used to resettle Z_REF and Z_SCALE.
+    if (diagnostics && landmarks) {
+      // Instrumentation only, and only under ?diag: a second measureDepth() call
+      // alongside the one already inside HandInputSource, so the diagnostics buffer can
+      // see the intermediate palmWidth/raw/z values used to settle Z_REF and Z_SCALE.
       const depth = measureDepth(landmarks);
       diagnostics.record({
         t: now,
@@ -125,8 +133,12 @@ async function boot(): Promise<void> {
       pinchRatio: landmarks ? pinchRatio(landmarks) : null,
       pinching: input.pinching,
       drawing: input.drawing,
-      rollingRange: diagnostics.rolling(),
-      flickerCount: diagnostics.flickerCount,
+      diagnostics: diagnostics
+        ? {
+            rollingRange: diagnostics.rolling(),
+            flickerCount: diagnostics.flickerCount,
+          }
+        : undefined,
     });
     sceneCtx.render();
   }

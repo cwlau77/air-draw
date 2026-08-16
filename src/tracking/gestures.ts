@@ -1,4 +1,5 @@
 import type { Landmark } from "./handTracker";
+import { median } from "./median";
 import {
   LM_THUMB_TIP,
   LM_INDEX_TIP,
@@ -30,12 +31,6 @@ export function pinchRatio(landmarks: Landmark[]): number {
   return distance(landmarks[LM_THUMB_TIP], landmarks[LM_INDEX_TIP]) / reference;
 }
 
-/** Median of the values, which rejects brief impulsive spikes that an average would follow. */
-function median(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)];
-}
-
 /** Two-threshold state machine. One threshold would flicker at the boundary. */
 export class PinchDetector {
   private pinching = false;
@@ -44,10 +39,6 @@ export class PinchDetector {
   private ratioWindow: number[] = [];
   /** The median-filtered ratio thresholding actually used, or null before any sample. */
   private smoothed: number | null = null;
-
-  get isPinching(): boolean {
-    return this.pinching;
-  }
 
   /**
    * True only while points should actively be appended. Goes false the moment the

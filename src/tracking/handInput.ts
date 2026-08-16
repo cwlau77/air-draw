@@ -3,13 +3,8 @@ import type { HandInput } from "./types";
 import { PinchDetector } from "./gestures";
 import { OneEuroFilter } from "./smoothing";
 import { estimateDepth } from "./depth";
+import { median } from "./median";
 import { LM_THUMB_TIP, LM_INDEX_TIP, SCENE_WIDTH, SCENE_HEIGHT, Z_MEDIAN_WINDOW } from "../config";
-
-/** Median rejects impulsive spikes outright, where an average would be dragged toward them. */
-function median(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)];
-}
 
 export class HandInputSource {
   private pinch = new PinchDetector();

@@ -8,10 +8,6 @@ export class StrokeManager {
 
   constructor(private scene: THREE.Scene) {}
 
-  get strokeCount(): number {
-    return this.finished.length;
-  }
-
   /** Consumes only the HandInput contract — knows nothing about MediaPipe. */
   update(input: HandInput): void {
     // Losing the hand always ends the stroke immediately, so a reappearance

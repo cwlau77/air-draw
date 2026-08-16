@@ -9,7 +9,6 @@ export class SceneError extends Error {}
 export interface SceneContext {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
-  renderer: THREE.WebGLRenderer;
   controls: OrbitControls;
   render(): void;
   resize(): void;
@@ -76,5 +75,5 @@ export function createScene(canvas: HTMLCanvasElement): SceneContext {
     controls.update();
   }
 
-  return { scene, camera, renderer, controls, render, resize, resetView };
+  return { scene, camera, controls, render, resize, resetView };
 }
