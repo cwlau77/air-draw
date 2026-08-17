@@ -1,6 +1,16 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { CAMERA_FOV, CAMERA_START_Z } from "../config";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import {
+  CAMERA_FOV,
+  CAMERA_START_Z,
+  BLOOM_STRENGTH,
+  BLOOM_RADIUS,
+  BLOOM_THRESHOLD,
+} from "../config";
 import { ERROR_MESSAGES } from "../ui/errorDisplay";
 
 /** Thrown with a user-facing message already chosen. */
@@ -53,17 +63,34 @@ export function createScene(canvas: HTMLCanvasElement): SceneContext {
   // re-enable.
   controls.enablePan = false;
 
+  // Emissive strokes are the only bright thing in the scene, so bloom is what makes the
+  // drawing read as a light source rather than a painted tube. The renderer keeps
+  // alpha: true and its transparent clear colour, so the treated video still shows
+  // through — the composer must not introduce an opaque background.
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(
+    new UnrealBloomPass(
+      new THREE.Vector2(canvas.clientWidth, canvas.clientHeight),
+      BLOOM_STRENGTH,
+      BLOOM_RADIUS,
+      BLOOM_THRESHOLD,
+    ),
+  );
+  composer.addPass(new OutputPass());
+
   function resize(): void {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    composer.setSize(w, h);
   }
 
   function render(): void {
     controls.update();
-    renderer.render(scene, camera);
+    composer.render();
   }
 
   /** Snap the camera back to the front-on drawing pose. The fingertip maps to

@@ -181,3 +181,21 @@ export const HISTORY_DEPTH = 20;
  * not to sweep up neighbours.
  */
 export const ERASE_RADIUS = 0.35;
+
+/**
+ * Bloom. These values were measured in a spike on the target machine, not estimated.
+ *
+ * BLOOM_THRESHOLD is the load-bearing one: at 0.0 every pixel blooms, strokes saturate
+ * to white and both colour and tube form are lost — the effect reads as unusable mush.
+ * At 0.75 only the bright core blooms and the stroke keeps its colour and shading.
+ * Do not lower it without looking at the result.
+ */
+export const BLOOM_STRENGTH = 0.45;
+export const BLOOM_RADIUS = 0.4;
+export const BLOOM_THRESHOLD = 0.75;
+
+/**
+ * How brightly a stroke emits its own colour. Paired with BLOOM_THRESHOLD: raising this
+ * without raising the threshold pushes strokes toward white.
+ */
+export const STROKE_EMISSIVE_INTENSITY = 0.8;

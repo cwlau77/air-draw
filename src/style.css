@@ -28,10 +28,35 @@ body {
   height: 100%;
 }
 
+/* Vignette over the video but under everything else, so the frame edges fall away and
+   attention lands centre-screen where the drawing is. */
+#stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    rgba(40, 38, 48, 0.12) 0%,
+    rgba(14, 13, 18, 0.8) 100%
+  );
+}
+#scene { z-index: 2; }
+#overlay { z-index: 3; }
+
 /* Mirroring convention: the video is mirrored via CSS transform: scaleX(-1); the
    overlay canvas is mirrored identically; the scene mapping compensates with
    x_scene = (0.5 - lm.x) * SCENE_WIDTH. */
-#video { object-fit: cover; transform: scaleX(-1); }
+/* Blurred, dimmed and desaturated so the room becomes atmosphere rather than content.
+   Emissive strokes need darkness to glow against: against an untreated feed they read
+   as white mush. The three scene changes (emissive material, bloom, this) only work
+   together — do not adopt one without the others. */
+#video {
+  object-fit: cover;
+  transform: scaleX(-1);
+  filter: blur(14px) brightness(0.34) saturate(0.22) contrast(1.08);
+}
 #overlay { transform: scaleX(-1); pointer-events: none; }
 #scene { pointer-events: auto; }
 

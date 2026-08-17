@@ -5,6 +5,7 @@ import {
   MIN_POINT_DISTANCE,
   TUBE_SEGMENTS_PER_POINT,
   TUBE_RADIAL_SEGMENTS,
+  STROKE_EMISSIVE_INTENSITY,
 } from "../config";
 
 export class Stroke {
@@ -99,6 +100,8 @@ export class Stroke {
         color: this.color,
         roughness: 0.4,
         metalness: 0.1,
+        emissive: this.color,
+        emissiveIntensity: STROKE_EMISSIVE_INTENSITY,
       });
       this.finalMesh = new THREE.Mesh(dotGeometry, dotMaterial);
       this.finalMesh.position.set(p.x, p.y, p.z);
@@ -121,6 +124,8 @@ export class Stroke {
       color: this.color,
       roughness: 0.4,
       metalness: 0.1,
+      emissive: this.color,
+      emissiveIntensity: STROKE_EMISSIVE_INTENSITY,
     });
     this.finalMesh = new THREE.Mesh(geometry, material);
     this.scene.add(this.finalMesh);
