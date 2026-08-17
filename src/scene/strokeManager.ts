@@ -23,6 +23,16 @@ export class StrokeManager {
     this.radius = radius;
   }
 
+  /** The colour the next stroke will use. Read by the cursor so it previews the tool. */
+  get currentColor(): number {
+    return this.color;
+  }
+
+  /** The radius the next stroke will use. Read by the cursor so it previews the tool. */
+  get currentRadius(): number {
+    return this.radius;
+  }
+
   /** Consumes only the HandInput contract — knows nothing about MediaPipe. */
   update(input: HandInput): void {
     // Losing the hand always ends the stroke immediately, so a reappearance

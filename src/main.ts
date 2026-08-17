@@ -13,6 +13,7 @@ import { initControls } from "./ui/controls";
 import { initToolbar } from "./ui/toolbar";
 import { PinchDiagnostics } from "./ui/diagnostics";
 import { viewToWorld } from "./scene/viewMapping";
+import { STROKE_COLOR, STROKE_EMISSIVE_INTENSITY, CURSOR_RADIUS_SCALE } from "./config";
 
 async function boot(): Promise<void> {
   let video: HTMLVideoElement;
@@ -46,10 +47,15 @@ async function boot(): Promise<void> {
     throw err;
   }
 
-  const cursor = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12, 16, 16),
-    new THREE.MeshStandardMaterial({ color: 0xff4488 }),
-  );
+  // Unit sphere, scaled per frame to the selected brush radius — so the cursor previews
+  // both the colour and the thickness of the stroke it is about to draw. A fixed pink
+  // sphere gave no feedback until a stroke already existed.
+  const cursorMaterial = new THREE.MeshStandardMaterial({
+    color: STROKE_COLOR,
+    emissive: STROKE_COLOR,
+    emissiveIntensity: STROKE_EMISSIVE_INTENSITY,
+  });
+  const cursor = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), cursorMaterial);
   sceneCtx.scene.add(cursor);
 
   // Reused each frame by viewToWorld() to avoid a per-frame allocation.
@@ -114,6 +120,12 @@ async function boot(): Promise<void> {
 
     cursor.visible = input.present;
     cursor.position.copy(worldTip);
+    // Cheap per-frame reads of two numbers; keeps the cursor honest when the user
+    // changes colour or size mid-session without needing a change event.
+    cursorMaterial.color.setHex(strokes.currentColor);
+    cursorMaterial.emissive.setHex(strokes.currentColor);
+    const r = strokes.currentRadius * CURSOR_RADIUS_SCALE;
+    cursor.scale.set(r, r, r);
 
     strokes.update({ ...input, tip: worldTip });
 

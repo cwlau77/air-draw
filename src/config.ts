@@ -199,3 +199,9 @@ export const BLOOM_THRESHOLD = 0.75;
  * without raising the threshold pushes strokes toward white.
  */
 export const STROKE_EMISSIVE_INTENSITY = 0.8;
+
+/**
+ * Cursor size as a multiple of the selected brush radius. Larger than 1 so the cursor
+ * stays visible at the smallest brush size without being mistaken for a drawn dot.
+ */
+export const CURSOR_RADIUS_SCALE = 2.5;
