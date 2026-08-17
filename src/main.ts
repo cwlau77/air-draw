@@ -10,6 +10,7 @@ import { HandInputSource } from "./tracking/handInput";
 import { measureDepth } from "./tracking/depth";
 import { StrokeManager } from "./scene/strokeManager";
 import { initControls } from "./ui/controls";
+import { initToolbar } from "./ui/toolbar";
 import { PinchDiagnostics } from "./ui/diagnostics";
 import { viewToWorld } from "./scene/viewMapping";
 
@@ -89,6 +90,12 @@ async function boot(): Promise<void> {
       return next;
     },
     onResetView: () => sceneCtx.resetView(),
+  });
+
+  initToolbar({
+    onColor: (color) => strokes.setColor(color),
+    onRadius: (radius) => strokes.setRadius(radius),
+    onUndo: () => strokes.undo(),
   });
 
   function frame(): void {
