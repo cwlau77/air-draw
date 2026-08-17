@@ -39,6 +39,7 @@ export function initToolbar(handlers: ToolbarHandlers): void {
   const sizeLabels = ["S", "M", "L"];
   STROKE_RADII.forEach((radius, i) => {
     const btn = document.createElement("button");
+    btn.className = "size";
     // Fall back to the raw radius so adding a config entry yields a usable button
     // rather than a silently empty one.
     btn.textContent = sizeLabels[i] ?? String(radius);

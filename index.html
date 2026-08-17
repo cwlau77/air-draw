@@ -15,12 +15,18 @@
       <canvas id="scene"></canvas>
       <div id="error" hidden></div>
       <div id="controls">
-        <button id="clear">Clear all</button>
-        <button id="toggle-debug">Debug: on</button>
-        <button id="reset-view">Reset view</button>
-        <button id="undo">Undo</button>
-        <span id="swatches"></span>
-        <span id="sizes"></span>
+        <div class="cluster" id="cluster-tools">
+          <span id="swatches"></span>
+          <span id="sizes"></span>
+        </div>
+        <div class="cluster" id="cluster-history">
+          <button id="undo">Undo</button>
+          <button id="clear">Clear all</button>
+        </div>
+        <div class="cluster" id="cluster-view">
+          <button id="reset-view">Reset view</button>
+          <button id="toggle-debug">Debug: on</button>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
