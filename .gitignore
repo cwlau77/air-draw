@@ -5,6 +5,7 @@ dist/
 # Local working documents — deliberately not published to GitHub.
 # These are for the developer and AI assistants working in this repo, not for readers of it.
 CLAUDE.md
+HANDOFF.md
 PLAN.md
 AGENTS.md
 GEMINI.md
