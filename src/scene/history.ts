@@ -12,8 +12,9 @@ export type Action =
  * mode to arm it, so an accidental fist near the drawing would otherwise be permanent.
  *
  * Strokes belonging to an erase action are removed from the scene but NOT disposed,
- * because undo may restore them. They are disposed only when their action is evicted
- * past HISTORY_DEPTH — without that, erased geometry would live for the whole session.
+ * because undo may restore them. They are disposed when their action is evicted past
+ * HISTORY_DEPTH, or when the history is cleared — without that, erased geometry would
+ * live for the whole session.
  */
 export class ActionHistory {
   private actions: Action[] = [];

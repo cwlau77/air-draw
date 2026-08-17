@@ -77,9 +77,14 @@ export class HandInputSource {
     // update() just computed, and object-literal fields evaluate top to bottom, so
     // hoisting this call keeps that dependency explicit instead of relying on literal
     // property order (which a future "cosmetic" reordering could silently break).
-    const pinching = this.pinch.update(landmarks, nowMs);
-    const drawing = this.pinch.isDrawing;
     const erasing = this.fist.update(landmarks);
+    // Erase wins on BOTH edges. Feeding null while a fist is held resets the pinch
+    // detector, so relaxing the fist cannot hand a still-engaged pinch straight back to
+    // StrokeManager — the stroke must be re-engaged from an open hand. This is literally
+    // the spec's "as though the hand had been lost". Guarding only the leading edge left
+    // the detector latched through the fist and produced a spurious stroke on release.
+    const pinching = this.pinch.update(erasing ? null : landmarks, nowMs);
+    const drawing = this.pinch.isDrawing;
 
     this.last = {
       tip: {

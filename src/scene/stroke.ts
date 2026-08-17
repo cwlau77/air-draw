@@ -128,7 +128,8 @@ export class Stroke {
 
   /**
    * Removes the finished mesh from the scene WITHOUT disposing it, so an erase can be
-   * undone. Disposal happens only when the action is evicted from the history.
+   * undone. Disposal happens when the action is evicted from the history, or when the
+   * history is cleared.
    */
   hide(): void {
     if (this.finalMesh) this.scene.remove(this.finalMesh);
