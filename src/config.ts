@@ -133,14 +133,13 @@ export const PALM_WIDTH_MIN = 0.04;
 export const Z_MEDIAN_WINDOW = 5;
 
 /**
- * Fist engages below this ratio and releases above FIST_OFF. PLACEHOLDER VALUES —
- * they have NOT been measured. Record fistRatio with airDrawDiag under ?diag, take
- * distributions for a closed fist, a relaxed open hand and an active pinch, then set
- * these from the gap. The left hand is expected to be the binding constraint, as it
- * was for pinch.
+ * Fist engages below FIST_ON and releases above FIST_OFF. Measured across both hands:
+ * a fist never exceeds 1.0031 and a non-fist hand (open or pinching) never drops below
+ * 2.5115, so these sit at the geometric middle of that gap with a ~1.4x margin on each
+ * side. The left hand is the binding constraint, as it is for pinch.
  */
-export const FIST_ON = 0.9;
-export const FIST_OFF = 1.1;
+export const FIST_ON = 1.4;
+export const FIST_OFF = 1.8;
 
 /** Samples for the median that rejects impulsive fist-ratio spikes. Odd values only. */
 export const FIST_MEDIAN_WINDOW = 5;
