@@ -201,7 +201,8 @@ export const BLOOM_THRESHOLD = 0.75;
 export const STROKE_EMISSIVE_INTENSITY = 0.8;
 
 /**
- * Cursor size as a multiple of the selected brush radius. Larger than 1 so the cursor
- * stays visible at the smallest brush size without being mistaken for a drawn dot.
+ * Cursor size as a multiple of the selected brush radius. The cursor takes the stroke's
+ * exact colour and emissive treatment, so size is the only thing distinguishing it from
+ * a drawn dot — keep this comfortably above 1.
  */
 export const CURSOR_RADIUS_SCALE = 2.5;

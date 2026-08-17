@@ -67,8 +67,20 @@ export function createScene(canvas: HTMLCanvasElement): SceneContext {
   // drawing read as a light source rather than a painted tube. The renderer keeps
   // alpha: true and its transparent clear colour, so the treated video still shows
   // through — the composer must not introduce an opaque background.
-  const composer = new EffectComposer(renderer);
+  // EffectComposer builds its own render target with samples unset, so routing the
+  // scene through it would silently drop the multisampling `antialias: true` asks for
+  // — leaving stroke tubes and the cursor visibly jaggier while still paying for a
+  // multisampled backbuffer that now only receives OutputPass's fullscreen quad.
+  // An explicit target with samples: 4 puts MSAA back where the scene is actually drawn.
+  const composerTarget = new THREE.WebGLRenderTarget(
+    renderer.getDrawingBufferSize(new THREE.Vector2()).x,
+    renderer.getDrawingBufferSize(new THREE.Vector2()).y,
+    { type: THREE.HalfFloatType, samples: 4 },
+  );
+  const composer = new EffectComposer(renderer, composerTarget);
   composer.addPass(new RenderPass(scene, camera));
+  // The resolution argument is overwritten by addPass(), which sizes every pass from
+  // the composer's own dimensions — do not try to tune bloom resolution here.
   composer.addPass(
     new UnrealBloomPass(
       new THREE.Vector2(canvas.clientWidth, canvas.clientHeight),
@@ -78,6 +90,11 @@ export function createScene(canvas: HTMLCanvasElement): SceneContext {
     ),
   );
   composer.addPass(new OutputPass());
+  // REQUIRED, not optional. When given an explicit target, EffectComposer takes its
+  // internal width from that target's DEVICE pixels, then addPass() multiplies by the
+  // pixel ratio again — so without this the bloom mips would run at 4x area for the
+  // whole session, since resize() never fires at startup.
+  composer.setSize(canvas.clientWidth, canvas.clientHeight);
 
   function resize(): void {
     const w = canvas.clientWidth;

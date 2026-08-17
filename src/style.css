@@ -47,16 +47,17 @@ body {
 
 /* Mirroring convention: the video is mirrored via CSS transform: scaleX(-1); the
    overlay canvas is mirrored identically; the scene mapping compensates with
-   x_scene = (0.5 - lm.x) * SCENE_WIDTH. */
-/* Blurred, dimmed and desaturated so the room becomes atmosphere rather than content.
-   Emissive strokes need darkness to glow against: against an untreated feed they read
-   as white mush. The three scene changes (emissive material, bloom, this) only work
-   together — do not adopt one without the others. */
+   x_scene = (0.5 - lm.x) * SCENE_WIDTH.
+   The video is also blurred, dimmed and desaturated so the room becomes atmosphere
+   rather than content. Emissive strokes need darkness to glow against: against an
+   untreated feed they read as white mush. The three scene changes (emissive material,
+   bloom, this) only work together — do not adopt one without the others. */
 #video {
   object-fit: cover;
   transform: scaleX(-1);
   filter: blur(14px) brightness(0.34) saturate(0.22) contrast(1.08);
 }
+/* Mirrored identically to #video above, per the mirroring convention. */
 #overlay { transform: scaleX(-1); pointer-events: none; }
 #scene { pointer-events: auto; }
 
