@@ -33,7 +33,15 @@ export class StrokeManager {
     }
 
     if (input.erasing) {
-      // A fist forces pinching/drawing false upstream, so no stroke can be active here.
+      // Finalize any stroke still active from a previous frame before scanning. The
+      // pinch block's endActive() is unreachable once we return below, and going
+      // straight from a pinch to a fist would otherwise strand a raw, un-finalized
+      // line in the scene: absent from `finished`, absent from history, and invisible
+      // to isNear() — which only scans finished. Doing it here also removes this
+      // branch's dependence on HandInputSource forcing pinching false, which is
+      // enforced in a different file and could be weakened without warning.
+      this.endActive();
+
       const hit = this.finished.filter((s) => this.isNear(s, input.tip));
       if (hit.length > 0) {
         for (const stroke of hit) stroke.hide();
